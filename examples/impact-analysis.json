@@ -1,0 +1,77 @@
+{
+  "run_id": "CL-8736",
+  "auth_mode": "chatgpt_oauth",
+  "model": "gpt-5.6-sol",
+  "change": {
+    "asset": "b2fd91.ORDER_ENTRY_DB.analytics.order_details",
+    "asset_urn": "urn:li:dataset:(urn:li:dataPlatform:dbt,b2fd91.ORDER_ENTRY_DB.analytics.order_details,PROD)",
+    "column": "discount_amount",
+    "change_type": "drop_column",
+    "environment": "PROD"
+  },
+  "context": {
+    "asset_search_verified": true,
+    "schema_match": ["discount_amount"],
+    "governance_signal_count": 16,
+    "prior_incident_memory_count": 3
+  },
+  "impact": {
+    "severity": "P1",
+    "headline": "10 verified downstream assets at risk",
+    "summary": "DataHub verifies the drop column request for discount_amount on b2fd91.ORDER_ENTRY_DB.analytics.order_details in PROD. Its retrieved column lineage contains 10 downstream assets.",
+    "affected_asset_count": 10,
+    "owner_count": 12,
+    "business_reporting_asset_count": 8,
+    "why_it_matters": "The retrieved lineage exposes 8 BI reporting assets to the schema change. Ownership is grounded in 12 distinct DataHub owner record(s); actions without a retrieved owner remain explicitly unassigned. Bounded model risk focus: schema validation, downstream breakage, BI reporting disruption, unowned dependencies, source-governance review.",
+    "evidence": [
+      "DataHub schema confirms discount_amount on b2fd91.ORDER_ENTRY_DB.analytics.order_details in PROD.",
+      "DataHub column lineage returns 10 downstream assets for discount_amount.",
+      "Downstream platforms: 2 Looker, 6 Power BI, 2 Snowflake.",
+      "Source governance signals: tag: PII_Data, tag: Authoritative Source, term: PII, term: Certified.",
+      "DataHub returned 3 prior ContextLoop incident memories linked to this source."
+    ],
+    "actions": [
+      {
+        "id": 1,
+        "title": "Validate the drop column of discount_amount on b2fd91.ORDER_ENTRY_DB.analytics.order_details before deployment.",
+        "owner": "DataHub SE Team",
+        "priority": "now"
+      },
+      {
+        "id": 2,
+        "title": "Test all 10 retrieved downstream assets after the schema change.",
+        "owner": "Data Platform Team",
+        "priority": "next"
+      },
+      {
+        "id": 3,
+        "title": "Review DataHub ownership and assign any unowned affected assets before approval.",
+        "owner": "Ian Chen",
+        "priority": "next"
+      },
+      {
+        "id": 4,
+        "title": "Run refresh and quality checks for the 8 retrieved BI reporting assets.",
+        "owner": "David Kim",
+        "priority": "next"
+      },
+      {
+        "id": 5,
+        "title": "Record the decision and rollback evidence in DataHub.",
+        "owner": "Ben Porter",
+        "priority": "monitor"
+      }
+    ]
+  },
+  "verification": {
+    "read_elapsed_ms": 226,
+    "lineage_and_memory_elapsed_ms": 725,
+    "reasoning_elapsed_ms": 11922,
+    "write_back_urn": "urn:li:document:shared-b90b866f-cf9c-404c-ad33-03f88d9c2248",
+    "write_back_subtype": "Analysis",
+    "write_back_status": "PUBLISHED",
+    "related_asset_count": 11,
+    "related_document_count": 3,
+    "post_write_sdk_verification": true
+  }
+}

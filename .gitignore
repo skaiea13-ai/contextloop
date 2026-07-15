@@ -1,0 +1,30 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+*.log
+
+# Research-only candidate repositories; not part of the ContextLoop submission.
+/arc-agi-3-bounty/
+/arc-agi-2-bounty/
+/battlechain-confidence-pools-audit/
+/biohub-cell-tracking-bounty/
+/metaculus-market-pulse-bounty/
+/pokemon-tcg-strategy-bounty/
+/rogii-wellbore-bounty/
+/trace-the-ace-bounty/
+
+# Local release captures and draft videos are reviewed before public upload.
+/.local-submission/
