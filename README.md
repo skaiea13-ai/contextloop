@@ -66,8 +66,8 @@ The output must contain `Logged in using ChatGPT`.
 ## Quick start
 
 ```bash
-git clone <PUBLIC_REPOSITORY_URL>
-cd ContextLoop
+git clone https://github.com/skaiea13-ai/contextloop.git
+cd contextloop
 ./scripts/bootstrap.sh
 ./scripts/dev.sh
 ```

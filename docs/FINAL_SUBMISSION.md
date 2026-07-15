@@ -1,6 +1,6 @@
 # Final Devpost submission field pack
 
-This is the locked submission copy. Replace only the three URL placeholders after publication; do not alter technical claims without rerunning `./scripts/verify.sh` and updating `docs/RELEASE_EVIDENCE.md`.
+This is the locked submission copy. Replace only the remaining demo-video URL placeholder after publication; do not alter technical claims without rerunning `./scripts/verify.sh` and updating `docs/RELEASE_EVIDENCE.md`.
 
 ## Project name
 
@@ -16,11 +16,11 @@ Agents That Do Real Work
 
 ## Project URL
 
-`<PUBLIC_PROJECT_OR_REPOSITORY_URL>`
+`https://github.com/skaiea13-ai/contextloop`
 
 ## Public code repository URL
 
-`<PUBLIC_REPOSITORY_URL>`
+`https://github.com/skaiea13-ai/contextloop`
 
 ## Public demo video URL
 

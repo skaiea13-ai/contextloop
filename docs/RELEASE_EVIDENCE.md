@@ -1,6 +1,6 @@
 # Release verification evidence
 
-Verification date: July 15, 2026<br>
+Verification date: July 16, 2026<br>
 Intended platform: desktop browser on macOS or Linux with a Docker-compatible runtime
 
 ## Automated checks
@@ -12,7 +12,7 @@ Intended platform: desktop browser on macOS or Linux with a Docker-compatible ru
 - TypeScript compilation and the Vite production build completed successfully.
 - Shell scripts pass Bash syntax validation, and `scripts/dev.sh` passes ShellCheck. The launcher waited for `/api/health`, started Vite on the strict 5173 port, returned a healthy ChatGPT OAuth/DataHub response, and cleaned up both processes on interruption. Its occupied-8000 path also failed immediately instead of starting the frontend against an unintended backend.
 - `examples/impact-analysis.json` passes strict JSON parsing.
-- `./scripts/verify.sh` re-confirmed the ChatGPT OAuth preflight and DataHub health after the July 15 hardening changes.
+- `./scripts/verify.sh` re-confirmed the full static, test, production-build, ChatGPT OAuth, and DataHub gate on July 16 after the public repository URLs were added.
 - On July 12, a fresh local clone completed judge-mode bootstrap, locked dependency installation, the full verification suite, and a clean working-tree check while each script was invoked from outside the clone. That clean-clone exercise was not repeated on July 15.
 
 DataHub emits its documented experimental-SDK warning for `datahub.sdk` and Agent Context Kit `save_document`; it does not fail any check.
@@ -58,11 +58,12 @@ QA screenshots are intentionally not stored in the repository because they are t
 - The local final candidate is 155.000 seconds, 1600×1000 at 30 fps, with H.264 video, stereo AAC narration, and an embedded English subtitle stream.
 - Full decoding, SHA-256 verification, eleven representative-frame inspections, subtitle round-trip extraction, and black-frame detection passed. Mean audio level is -17.9 dB with a -1.0 dB peak; all seven narration sections finish inside their assigned timeline windows.
 - The video contains only page-content captures from the actual OAuth run and local DataHub document. It contains no terminal, browser profile, local filesystem path, email, credential, copyrighted music, or fixture-mode label.
-- The reviewed local artifact is intentionally excluded from Git. Public upload remains subject to explicit user approval.
+- The reviewed local artifact is intentionally excluded from Git; public upload is the remaining publication step.
 
 ## Publication status
 
-- Public project URL: pending publication and explicit user approval.
-- Public repository URL: pending publication and explicit user approval.
-- Public demonstration video: reviewed local final candidate complete; public upload and URL pending explicit user approval.
-- Public commit-author identity: the isolated one-commit release uses a generic GitHub noreply identity; publication remains pending explicit user approval.
+- Public project URL: `https://github.com/skaiea13-ai/contextloop`.
+- Public repository URL: `https://github.com/skaiea13-ai/contextloop`.
+- Anonymous HTTP, raw-license, GitHub API, and fresh-clone checks confirmed public access, Apache-2.0 detection, and release commit `10c0dd6b8b1726b3b2e9d9113451cc7af85d716c`.
+- Public demonstration video: reviewed local final candidate complete; public upload and URL are the remaining publication step.
+- Public commit-author identity: the isolated one-commit release uses the generic GitHub noreply identity `ContextLoop Release`.
