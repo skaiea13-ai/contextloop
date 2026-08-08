@@ -14,6 +14,10 @@ Close the schema-change loop with DataHub-grounded impact, action, and memory.
 
 Agents That Do Real Work
 
+## Public Devpost submission URL
+
+`https://devpost.com/software/contextloop`
+
 ## Project URL
 
 `https://github.com/skaiea13-ai/contextloop`

@@ -18,8 +18,8 @@ Sources: [hackathon overview](https://datahub.devpost.com/) and [official rules]
 | Project remains free and unrestricted for judging through the judging period | `CONTEXTLOOP_FAKE_CODEX=1` exercises live DataHub behavior with no account and no model call | Runtime complete; depends on keeping the public repository available through August 31, 2026 |
 | All submission materials are in English or translated | UI, README, testing instructions, Devpost copy, narration, and embedded subtitle track are English | Complete |
 | New work was created during the submission period; pre-existing work is disclosed | `docs/DISCLOSURES.md` records project-period work, standard frameworks, the official sample pack, generated concept, and AI assistance | Complete, subject to entrant attestation |
-| Entrant owns the submission and respects third-party licenses and rights | Apache-2.0 project license plus disclosure of open-source dependencies and official sample data | Entrant attestation required |
-| Submission entered before August 10, 2026 at 5:00 PM EDT | Deadline is August 11, 2026 at 6:00 AM KST | Devpost registration and final submission pending |
+| Entrant owns the submission and respects third-party licenses and rights | Apache-2.0 project license plus disclosure of open-source dependencies and official sample data | Complete; entrant attested during Devpost submission |
+| Submission entered before August 10, 2026 at 5:00 PM EDT | Public submission: `https://devpost.com/software/contextloop` | Complete; Devpost confirmed submission before the deadline |
 
 ## User-specific model boundary
 

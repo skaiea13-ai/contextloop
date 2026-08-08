@@ -66,6 +66,7 @@ QA screenshots are intentionally not stored in the repository because they are t
 
 - Public project URL: `https://github.com/skaiea13-ai/contextloop`.
 - Public repository URL: `https://github.com/skaiea13-ai/contextloop`.
-- Anonymous HTTP, raw-license, and GitHub API checks on August 8 confirmed public access, Apache-2.0 detection, and publication-preparation head `7326e2c429d907f4509438ab7402b574498e2644`.
+- Public Devpost submission: `https://devpost.com/software/contextloop`; Devpost displayed `Project submitted!`, embedded the public demo video, and linked the public GitHub repository.
+- Anonymous HTTP, raw-license, and GitHub API checks confirmed public access, Apache-2.0 detection, and pre-submission public head `668176d02fe7f0e31419dcae524f2eb55972ced0`.
 - Public demonstration video: `https://youtu.be/VW5ZLLwqPoQ`; YouTube reports a 2:36 duration, English default language, Science & Technology category, and no copyright-check issues.
 - Public commit-author identity: isolated release commits use the generic GitHub noreply identity `ContextLoop Release`.

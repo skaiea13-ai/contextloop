@@ -4,8 +4,8 @@ Source of truth: [Build with DataHub: The Agent Hackathon](https://datahub.devpo
 
 ## Eligibility and timing
 
-- [ ] Entrant is registered on Devpost and explicitly accepts the official rules.
-- [ ] Submission is completed before August 10, 2026 at 5:00 PM EDT.
+- [x] Entrant is registered on Devpost and explicitly accepted the official rules.
+- [x] Submission was completed before August 10, 2026 at 5:00 PM EDT: `https://devpost.com/software/contextloop`.
 - [x] All work claimed for the submission was created during the submission period.
 - [x] Any pre-existing framework or generated asset is disclosed.
 
@@ -36,7 +36,7 @@ Source of truth: [Build with DataHub: The Agent Hackathon](https://datahub.devpo
 
 ## Final consistency audit
 
-- [x] Public video, README, runtime screenshots, and locked Devpost text make consistent product claims; only the Devpost submission URL remains pending.
+- [x] Public video, README, runtime screenshots, locked Devpost text, and the submitted public project page make consistent product claims.
 - [x] Every visible asset and owner in the verified demo comes from DataHub.
 - [x] The documented model path says ChatGPT OAuth via Codex CLI, not OpenAI API.
 - [x] Judges can understand the value and run the project without private assistance.
@@ -45,4 +45,4 @@ Source of truth: [Build with DataHub: The Agent Hackathon](https://datahub.devpo
 
 - [ ] A meaningful contribution has been accepted by an official DataHub open-source repository.
 - [x] No upstream contribution or bonus claim appears in the submission package without a public contribution URL.
-- [ ] Most Valuable Feedback section is completed with the verified Agent Context Kit Document-hydration report.
+- [x] Most Valuable Feedback section was completed with the verified Agent Context Kit Document-hydration and write-receipt report.
