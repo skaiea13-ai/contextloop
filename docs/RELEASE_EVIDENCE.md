@@ -1,6 +1,6 @@
 # Release verification evidence
 
-Verification date: July 16, 2026<br>
+Latest verification date: August 8, 2026<br>
 Intended platform: desktop browser on macOS or Linux with a Docker-compatible runtime
 
 ## Automated checks
@@ -13,6 +13,7 @@ Intended platform: desktop browser on macOS or Linux with a Docker-compatible ru
 - Shell scripts pass Bash syntax validation, and `scripts/dev.sh` passes ShellCheck. The launcher waited for `/api/health`, started Vite on the strict 5173 port, returned a healthy ChatGPT OAuth/DataHub response, and cleaned up both processes on interruption. Its occupied-8000 path also failed immediately instead of starting the frontend against an unintended backend.
 - `examples/impact-analysis.json` passes strict JSON parsing.
 - `./scripts/verify.sh` re-confirmed the full static, test, production-build, ChatGPT OAuth, and DataHub gate on July 16 after the public repository URLs were added.
+- `./scripts/verify.sh` re-confirmed Ruff, all 25 Pytest tests, all three Vitest flows, the TypeScript build, ChatGPT OAuth, and DataHub health on August 8.
 - On July 12, a fresh local clone completed judge-mode bootstrap, locked dependency installation, the full verification suite, and a clean working-tree check while each script was invoked from outside the clone. That clean-clone exercise was not repeated on July 15.
 
 DataHub emits its documented experimental-SDK warning for `datahub.sdk` and Agent Context Kit `save_document`; it does not fail any check.
@@ -30,6 +31,7 @@ DataHub emits its documented experimental-SDK warning for `datahub.sdk` and Agen
 - Write-back: `urn:li:document:shared-b90b866f-cf9c-404c-ad33-03f88d9c2248` was re-read through the DataHub SDK as a published `Analysis` with the exact title/content markers, eleven related assets, and three related prior documents.
 - Exact sanitized output is preserved in `examples/impact-analysis.json` and `examples/incident-memory.md`.
 - `./scripts/verify_live.sh` independently completed the same release gate on run `CL-D74B`: zero matching document before approval, then published status, dynamic content, and exact relationship re-query verification after approval.
+- On August 8, `./scripts/verify_live.sh` independently passed again on run `CL-682A`: ChatGPT OAuth, ten affected assets, five grounded actions, approval-gated write-back, verified DataHub URL, and successful SDK re-read.
 
 ## Free judge path
 
@@ -46,17 +48,17 @@ On July 15, the backend was launched with `CONTEXTLOOP_FAKE_CODEX=1`. The health
 - The five-stage ledger is horizontally scrollable on mobile without expanding the page width.
 - No browser console warning or error was present after the real OAuth flow.
 - All runtime date and time labels are forced to English.
+- The August 8 desktop pass used real-OAuth run `CL-99FA`. It completed with ten affected assets, twelve owners, eight BI assets, and five grounded actions; the separate approval created and opened the exact published DataHub `Analysis` document for that run. A second real-OAuth pass at an emulated 390×844 viewport reached its approval gate with no page-level horizontal overflow and no console warnings or errors; that mobile pass was intentionally not written back.
 
 QA screenshots are intentionally not stored in the repository because they are test artifacts, not required submission assets. The public demo video must show the same verified runtime state.
 
 ## Final local demo candidate
 
-- A second real-OAuth browser pass on July 15 produced run `CL-2EA4`, with ten downstream assets, twelve retrieved owners, eight BI assets, five grounded actions, and two prior incident memories returned for that run.
-- The explicit approval action created `urn:li:document:shared-b131747d-e411-4e50-957f-2c8d7ebafa02`; the browser opened that exact document as a published `Analysis` and displayed its impact, actions, related assets, and prior documents.
-- Browser review found and fixed a release bug in the success-link route. DataHub 1.6.0 requires the full document URN at `/document/urn:li:document:...`; the API now preserves the full URN, and both the write-back test and `scripts/verify_live.sh` enforce it.
-- After that fix, `./scripts/verify_live.sh` passed again on run `CL-D339`, including zero pre-approval matches, ten affected assets, five grounded actions, exact SDK re-read, and `datahub_url_verified: true`.
+- The August 8 real-OAuth browser pass produced run `CL-99FA`, with ten downstream assets, twelve retrieved owners, eight BI assets, five grounded actions, and zero prior incident memories returned for that run.
+- The explicit approval action created `urn:li:document:shared-d68eb433-1451-491a-8fe3-832b42f91482`; the browser opened that exact document as a published `Analysis` and displayed its impact, owned actions, and related assets. The narration accurately states that prior incident memories are linked only when retrieved.
 - The local final candidate is 155.000 seconds, 1600×1000 at 30 fps, with H.264 video, stereo AAC narration, and an embedded English subtitle stream.
-- Full decoding, SHA-256 verification, eleven representative-frame inspections, subtitle round-trip extraction, and black-frame detection passed. Mean audio level is -17.9 dB with a -1.0 dB peak; all seven narration sections finish inside their assigned timeline windows.
+- Full decoding, SHA-256 verification, twelve representative-frame inspections, exact subtitle round-trip extraction, and black-frame detection passed. Mean audio level is -16.6 dB with a -1.2 dB peak; all seven narration sections finish inside their assigned timeline windows.
+- Final SHA-256: `eae90cb12aa691679997c2876fd403a718503f4fcb8fc903bc8cb3301496f627`.
 - The video contains only page-content captures from the actual OAuth run and local DataHub document. It contains no terminal, browser profile, local filesystem path, email, credential, copyrighted music, or fixture-mode label.
 - The reviewed local artifact is intentionally excluded from Git; public upload is the remaining publication step.
 
@@ -64,6 +66,6 @@ QA screenshots are intentionally not stored in the repository because they are t
 
 - Public project URL: `https://github.com/skaiea13-ai/contextloop`.
 - Public repository URL: `https://github.com/skaiea13-ai/contextloop`.
-- Anonymous HTTP, raw-license, GitHub API, and fresh-clone checks confirmed public access, Apache-2.0 detection, and release commit `10c0dd6b8b1726b3b2e9d9113451cc7af85d716c`.
+- Anonymous HTTP, raw-license, and GitHub API checks on August 8 confirmed public access, Apache-2.0 detection, and public head `917eea0b72a11979ce852e53072cee6d0ba12e0d`.
 - Public demonstration video: reviewed local final candidate complete; public upload and URL are the remaining publication step.
-- Public commit-author identity: the isolated one-commit release uses the generic GitHub noreply identity `ContextLoop Release`.
+- Public commit-author identity: both isolated release commits use the generic GitHub noreply identity `ContextLoop Release`.

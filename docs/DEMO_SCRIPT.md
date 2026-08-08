@@ -31,7 +31,7 @@ Let the five-stage ledger animate.
 
 **Narration:**
 
-“Agent Context Kit first verifies the asset through search, then loads the exact schema field, ownership, governance signals, and prior incident memories. It queries column-level lineage up to three hops, then builds a bounded, source-centered impact projection for the model and interface.”
+“Agent Context Kit first verifies the asset through search, then loads the exact schema field, ownership, governance signals, and checks for prior incident memories. It queries column-level lineage up to three hops, then builds a bounded, source-centered impact projection for the model and interface.”
 
 When complete, show the bounded projection, its overflow count, and the `10 assets` evidence count.
 
@@ -61,7 +61,7 @@ Click the green success link to open the new DataHub document.
 
 **Narration:**
 
-“ContextLoop saves an Analysis document containing the change, impact, evidence, and owned actions. It is related to the source, every asset in this verified impact set, and prior incident documents, creating a navigable memory chain for future humans and agents.”
+“ContextLoop saves an Analysis document containing the change, impact, evidence, and owned actions. It is related to the source and every asset in this verified impact set. When prior incident memories are retrieved, it links those as well, creating a navigable memory chain for future humans and agents.”
 
 Show the document title and related assets in DataHub.
 
