@@ -26,8 +26,8 @@ Source of truth: [Build with DataHub: The Agent Hackathon](https://datahub.devpo
 - [x] Apache 2.0 `LICENSE` at repository root.
 - [x] Repository About metadata and the anonymous GitHub API identify the license as Apache-2.0.
 - [x] English project description and testing instructions.
-- [ ] Public YouTube, Vimeo, or Youku demo video under three minutes.
-- [x] Reviewed 155-second local video shows the actual real-OAuth project functioning on its intended desktop browser; only public upload remains.
+- [x] Public YouTube demo video under three minutes: `https://youtu.be/VW5ZLLwqPoQ`.
+- [x] Published 155-second video shows the actual real-OAuth project functioning on its intended desktop browser and includes manually uploaded English captions.
 - [x] Sample outputs present under `examples/`.
 - [x] No secret, personal token, local credential, private dataset, or machine-local path in the repository or working diff.
 - [x] Public history is isolated to a generic GitHub noreply release identity and contains no personal author history.
@@ -36,7 +36,7 @@ Source of truth: [Build with DataHub: The Agent Hackathon](https://datahub.devpo
 
 ## Final consistency audit
 
-- [x] Reviewed local video, README, runtime screenshots, and locked Devpost text make consistent product claims; only the public video and Devpost URLs remain pending.
+- [x] Public video, README, runtime screenshots, and locked Devpost text make consistent product claims; only the Devpost submission URL remains pending.
 - [x] Every visible asset and owner in the verified demo comes from DataHub.
 - [x] The documented model path says ChatGPT OAuth via Codex CLI, not OpenAI API.
 - [x] Judges can understand the value and run the project without private assistance.

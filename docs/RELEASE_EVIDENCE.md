@@ -60,12 +60,12 @@ QA screenshots are intentionally not stored in the repository because they are t
 - Full decoding, SHA-256 verification, twelve representative-frame inspections, exact subtitle round-trip extraction, and black-frame detection passed. Mean audio level is -16.6 dB with a -1.2 dB peak; all seven narration sections finish inside their assigned timeline windows.
 - Final SHA-256: `eae90cb12aa691679997c2876fd403a718503f4fcb8fc903bc8cb3301496f627`.
 - The video contains only page-content captures from the actual OAuth run and local DataHub document. It contains no terminal, browser profile, local filesystem path, email, credential, copyrighted music, or fixture-mode label.
-- The reviewed local artifact is intentionally excluded from Git; public upload is the remaining publication step.
+- The reviewed local artifact remains excluded from Git. It was published at `https://youtu.be/VW5ZLLwqPoQ` with manually uploaded English captions and a YouTube AI-use disclosure for the synthetic narration.
 
 ## Publication status
 
 - Public project URL: `https://github.com/skaiea13-ai/contextloop`.
 - Public repository URL: `https://github.com/skaiea13-ai/contextloop`.
-- Anonymous HTTP, raw-license, and GitHub API checks on August 8 confirmed public access, Apache-2.0 detection, and public head `917eea0b72a11979ce852e53072cee6d0ba12e0d`.
-- Public demonstration video: reviewed local final candidate complete; public upload and URL are the remaining publication step.
-- Public commit-author identity: both isolated release commits use the generic GitHub noreply identity `ContextLoop Release`.
+- Anonymous HTTP, raw-license, and GitHub API checks on August 8 confirmed public access, Apache-2.0 detection, and publication-preparation head `7326e2c429d907f4509438ab7402b574498e2644`.
+- Public demonstration video: `https://youtu.be/VW5ZLLwqPoQ`; YouTube reports a 2:36 duration, English default language, Science & Technology category, and no copyright-check issues.
+- Public commit-author identity: isolated release commits use the generic GitHub noreply identity `ContextLoop Release`.
