@@ -44,7 +44,7 @@ flowchart LR
     API -->|"save_document"| ACK --> DH
 ```
 
-The model never receives credentials or raw warehouse data. It receives a compact, email-scrubbed projection of DataHub metadata: the requested change, exact schema match, downstream asset names and platforms, catalog owner display names, safe governance signals, and bounded excerpts from prior related ContextLoop documents. Catalog text is treated as untrusted data, never as instructions. Codex can return only a severity and a bounded list of risk-factor enums; the server derives all entity-bearing prose, counts, evidence, and owner assignments from verified DataHub context.
+The model never receives credentials, raw warehouse data, entity names, owner identities, URNs, field names, governance labels, descriptions, or prior-document text. It receives only a bounded typed projection: normalized change type and environment, schema-verification status, and counts for downstream assets, reporting assets, owners, unowned assets, governance signals, and prior incidents. Codex can return only a severity and a bounded list of risk-factor enums; the server keeps the full DataHub context local and derives all entity-bearing prose, evidence, and owner assignments from that verified context.
 
 ## Prerequisites
 
@@ -117,6 +117,8 @@ The implementation deliberately has no API-provider adapter. [`backend/contextlo
 - removing `OPENAI_API_KEY` from the child environment;
 - invoking `codex exec --ephemeral --ignore-user-config --ignore-rules --sandbox read-only`;
 - constraining the response to severity and bounded risk-factor enums with a strict JSON Schema;
+- projecting DataHub metadata into non-identifying enums, a boolean, and bounded counts before the
+  model subprocess is invoked;
 - rejecting unexpected free-text fields and risk factors unsupported by the retrieved context;
 - deriving all counts and evidence deterministically from DataHub;
 - generating entity-bearing action text server-side and assigning only retrieved owners, or the explicit `Unassigned` status when none exists.

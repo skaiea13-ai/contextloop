@@ -186,7 +186,13 @@ def test_bounded_model_signals_are_grounded_and_tools_are_disabled(
 
     monkeypatch.setattr("backend.contextloop.codex_auth.subprocess.run", fake_run)
 
-    impact, auth_mode = runner.analyze(_context())
+    context = _context()
+    context["source"]["description"] = "Private escalation: +82 10-1111-2222"
+    context["source"]["environment"] = "Private lab for Julia Novak"
+    context["governance"]["signal_labels"] = ["Restricted owner: Julia Novak"]
+    context["prior_incident_memories"][0]["title"] = "Customer 010-3333-4444 incident"
+
+    impact, auth_mode = runner.analyze(context)
 
     assert auth_mode == "chatgpt_oauth"
     assert impact.severity == "P0"
@@ -212,11 +218,30 @@ def test_bounded_model_signals_are_grounded_and_tools_are_disabled(
     assert not captured["cwd"].exists()
 
     prompt = captured["prompt"]
-    assert '"asset_name": "warehouse.canonical_orders"' in prompt
-    assert '"environment": "DEV"' in prompt
-    assert '"column": "discount_amount"' in prompt
-    assert "request.supplied_alias" not in prompt
-    assert "request_supplied_column" not in prompt
+    model_context = json.loads(prompt.split("MODEL_CONTEXT\n", 1)[1])
+    assert model_context == {
+        "change_type": "drop_column",
+        "environment": "OTHER",
+        "schema_field_verified": True,
+        "downstream_asset_count": 2,
+        "business_reporting_asset_count": 1,
+        "owner_count": 2,
+        "unowned_asset_count": 0,
+        "governance_signal_count": 1,
+        "prior_incident_count": 1,
+    }
+    for private_value in (
+        SOURCE_URN,
+        "warehouse.canonical_orders",
+        "discount_amount",
+        "Data Platform Team",
+        "Julia Novak",
+        "+82 10-1111-2222",
+        "010-3333-4444",
+        "Private lab",
+        "Restricted owner",
+    ):
+        assert private_value not in prompt
 
 
 def test_unexpected_model_free_text_is_rejected() -> None:
