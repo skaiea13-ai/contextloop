@@ -20,7 +20,7 @@ SOURCE_URN = (
 
 
 def _context(*, owner_names: list[str] | None = None) -> dict[str, Any]:
-    owners = ["Data Platform Team", "Julia Novak"] if owner_names is None else owner_names
+    owners = ["Catalog owner 01", "Catalog owner 02"] if owner_names is None else owner_names
     nested_owners = [{"name": owner, "role": "Owner"} for owner in owners]
     return {
         "change": {
@@ -139,8 +139,8 @@ def test_fixture_analysis_is_deterministic_and_grounded(
     assert impact.owner_count == 2
     assert len(impact.evidence) == 5
     assert {action.owner for action in impact.actions} <= {
-        "Data Platform Team",
-        "Julia Novak",
+        "Catalog owner 01",
+        "Catalog owner 02",
     }
     assert "warehouse.canonical_orders" in impact.summary
     assert "DEV" in impact.summary
@@ -160,7 +160,7 @@ def test_empty_owner_names_are_explicitly_unassigned(
     assert impact.owner_count == 0
     assert {action.owner for action in impact.actions} == {"Unassigned"}
     serialized = impact.model_dump_json()
-    assert "Data Platform Team" not in serialized
+    assert "Catalog owner 01" not in serialized
     assert "Phantom Owner" not in serialized
 
 
@@ -186,11 +186,11 @@ def test_bounded_model_signals_are_grounded_and_tools_are_disabled(
 
     monkeypatch.setattr("backend.contextloop.codex_auth.subprocess.run", fake_run)
 
-    context = _context()
-    context["source"]["description"] = "Private escalation: +82 10-1111-2222"
-    context["source"]["environment"] = "Private lab for Julia Novak"
-    context["governance"]["signal_labels"] = ["Restricted owner: Julia Novak"]
-    context["prior_incident_memories"][0]["title"] = "Customer 010-3333-4444 incident"
+    context = _context(owner_names=["PRIVATE_OWNER_ALPHA", "PRIVATE_OWNER_BETA"])
+    context["source"]["description"] = "Private escalation: +1 202-555-0100"
+    context["source"]["environment"] = "Private lab for PRIVATE_OWNER_ALPHA"
+    context["governance"]["signal_labels"] = ["Restricted: PRIVATE_OWNER_ALPHA"]
+    context["prior_incident_memories"][0]["title"] = "Customer 202-555-0101 incident"
 
     impact, auth_mode = runner.analyze(context)
 
@@ -200,8 +200,8 @@ def test_bounded_model_signals_are_grounded_and_tools_are_disabled(
     assert impact.owner_count == 2
     assert impact.business_reporting_asset_count == 1
     assert {action.owner for action in impact.actions} <= {
-        "Data Platform Team",
-        "Julia Novak",
+        "PRIVATE_OWNER_ALPHA",
+        "PRIVATE_OWNER_BETA",
     }
     assert "BI reporting disruption" in impact.why_it_matters
     assert "unowned dependencies" not in impact.why_it_matters
@@ -234,12 +234,12 @@ def test_bounded_model_signals_are_grounded_and_tools_are_disabled(
         SOURCE_URN,
         "warehouse.canonical_orders",
         "discount_amount",
-        "Data Platform Team",
-        "Julia Novak",
-        "+82 10-1111-2222",
-        "010-3333-4444",
+        "PRIVATE_OWNER_ALPHA",
+        "PRIVATE_OWNER_BETA",
+        "+1 202-555-0100",
+        "202-555-0101",
         "Private lab",
-        "Restricted owner",
+        "Restricted",
     ):
         assert private_value not in prompt
 

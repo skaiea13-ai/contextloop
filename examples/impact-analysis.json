@@ -34,31 +34,31 @@
       {
         "id": 1,
         "title": "Validate the drop column of discount_amount on b2fd91.ORDER_ENTRY_DB.analytics.order_details before deployment.",
-        "owner": "DataHub SE Team",
+        "owner": "Catalog owner 01",
         "priority": "now"
       },
       {
         "id": 2,
         "title": "Test all 10 retrieved downstream assets after the schema change.",
-        "owner": "Data Platform Team",
+        "owner": "Catalog owner 02",
         "priority": "next"
       },
       {
         "id": 3,
         "title": "Review DataHub ownership and assign any unowned affected assets before approval.",
-        "owner": "Ian Chen",
+        "owner": "Catalog owner 03",
         "priority": "next"
       },
       {
         "id": 4,
         "title": "Run refresh and quality checks for the 8 retrieved BI reporting assets.",
-        "owner": "David Kim",
+        "owner": "Catalog owner 04",
         "priority": "next"
       },
       {
         "id": 5,
         "title": "Record the decision and rollback evidence in DataHub.",
-        "owner": "Ben Porter",
+        "owner": "Catalog owner 05",
         "priority": "monitor"
       }
     ]

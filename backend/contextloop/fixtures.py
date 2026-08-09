@@ -10,7 +10,7 @@ def fixture_impact(
     business_reporting_asset_count: int,
     evidence: list[str],
 ) -> ImpactAssessment:
-    owners = owner_names or ["Data Platform Team"]
+    owners = owner_names or ["Catalog owner 01"]
     action_titles = [
         "Replace the dropped column or update dependent transformations before deployment.",
         "Validate downstream semantic models against the revised schema.",

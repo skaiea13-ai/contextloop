@@ -86,13 +86,17 @@ jq --exit-status '
   ([.nodes[].owners[].name] | unique) as $catalog_owners |
   (
     .auth_mode == "chatgpt_oauth" and
+    ([$catalog_owners[] | test("^Catalog owner [0-9]{2}$")] | all) and
+    ([.nodes[].owners[].role] | all(. == "Catalog owner")) and
     .impact.affected_asset_count == ((.nodes | length) - 1) and
     .impact.owner_count == ($catalog_owners | length) and
     .impact.business_reporting_asset_count >= 0 and
     (.impact.evidence | length) >= 2 and
     (.impact.actions | length) >= 3 and
     .timings[-1].status == "waiting" and
-    ([.impact.actions[].owner] | all(. as $owner | $catalog_owners | index($owner) != null))
+    ([.impact.actions[].owner] | all(
+      . == "Unassigned" or (. as $owner | $catalog_owners | index($owner) != null)
+    ))
   )
 ' "$TEMP_DIR/analysis.json" >/dev/null
 

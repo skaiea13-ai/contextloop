@@ -25,7 +25,7 @@ const analysisResponse: AnalysisResponse = {
     entity_type: "dataset",
     column: "discount_amount",
     selected: true,
-    owners: [{ name: "Data Platform Team", role: "Technical Owner" }],
+    owners: [{ name: "Catalog owner 01", role: "Catalog owner" }],
   },
   nodes: [
     {
@@ -36,7 +36,7 @@ const analysisResponse: AnalysisResponse = {
       entity_type: "dataset",
       column: "discount_amount",
       selected: true,
-      owners: [{ name: "Data Platform Team", role: "Technical Owner" }],
+      owners: [{ name: "Catalog owner 01", role: "Catalog owner" }],
     },
     {
       id: "revenue-dashboard",
@@ -46,7 +46,7 @@ const analysisResponse: AnalysisResponse = {
       entity_type: "dashboard",
       column: "discount_amount",
       selected: false,
-      owners: [{ name: "Ian Chen", role: "Business Owner" }],
+      owners: [{ name: "Catalog owner 02", role: "Catalog owner" }],
     },
   ],
   edges: [{ source: "source", target: "revenue-dashboard", kind: "downstream" }],
@@ -63,9 +63,9 @@ const analysisResponse: AnalysisResponse = {
       "Column lineage reaches the Revenue dashboard.",
     ],
     actions: [
-      { id: 1, title: "Block the PROD column drop", owner: "Data Platform Team", priority: "now" },
-      { id: 2, title: "Update the revenue dashboard", owner: "Ian Chen", priority: "now" },
-      { id: 3, title: "Confirm a safe rollout plan", owner: "Data Platform Team", priority: "next" },
+      { id: 1, title: "Block the PROD column drop", owner: "Catalog owner 01", priority: "now" },
+      { id: 2, title: "Update the revenue dashboard", owner: "Catalog owner 02", priority: "now" },
+      { id: 3, title: "Confirm a safe rollout plan", owner: "Catalog owner 01", priority: "next" },
     ],
   },
   timings: [

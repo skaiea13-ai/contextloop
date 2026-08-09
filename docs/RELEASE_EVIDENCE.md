@@ -25,7 +25,7 @@ DataHub emits its documented experimental-SDK warning for `datahub.sdk` and Agen
 - DataHub OSS images: v1.6.0, healthy.
 - Agent Context Kit read: asset search verification, exact `discount_amount` schema match, ten assets selected into the bounded downstream impact set, sixteen safe source-governance signals, and three prior related ContextLoop documents.
 - Grounded analysis: run `CL-8736`, model `gpt-5.6-sol`, `auth_mode` `chatgpt_oauth`, severity `P1`.
-- The model returned only bounded severity/risk signals; all asset names, owner assignments, counts, evidence, and entity-bearing prose were generated from the retrieved DataHub context.
+- The model returned only bounded severity/risk signals; all asset names, counts, evidence, and entity-bearing prose were generated from the retrieved DataHub context. Owner assignments use sanitized stable aliases for retrieved owner records.
 - Timings: 226 ms context read, 725 ms lineage and memory projection, 11,922 ms OAuth reasoning.
 - Human gate: the Analysis document did not exist until the separate approval action.
 - Write-back: `urn:li:document:shared-b90b866f-cf9c-404c-ad33-03f88d9c2248` was re-read through the DataHub SDK as a published `Analysis` with the exact title/content markers, eleven related assets, and three related prior documents.

@@ -7,7 +7,8 @@ ContextLoop is built for the **Agents That Do Real Work** challenge in [Build wi
 1. Verify the selected asset through DataHub search, then read live schema, ownership, documentation, and governance signals.
 2. Query column-level downstream lineage up to three hops, build a bounded impact projection, and retrieve prior related incident memories with DataHub Agent Context Kit.
 3. Use a ChatGPT-authenticated Codex runtime to classify severity and bounded risk factors.
-4. Deterministically render evidence and actions assigned only to owners present in DataHub.
+4. Deterministically render evidence and actions assigned to stable, response-local aliases for
+   owners present in DataHub.
 5. After explicit human approval, save an incident-memory document and relate it to every asset in the bounded impact set and each retrieved prior incident document.
 
 No OpenAI API key is accepted or required. Model execution uses the user's existing **Codex ChatGPT OAuth** session, and the backend removes `OPENAI_API_KEY` from every model subprocess. This avoids metered OpenAI API billing; normal ChatGPT plan limits still apply.
@@ -44,7 +45,7 @@ flowchart LR
     API -->|"save_document"| ACK --> DH
 ```
 
-The model never receives credentials, raw warehouse data, entity names, owner identities, URNs, field names, governance labels, descriptions, or prior-document text. It receives only a bounded typed projection: normalized change type and environment, schema-verification status, and counts for downstream assets, reporting assets, owners, unowned assets, governance signals, and prior incidents. Codex can return only a severity and a bounded list of risk-factor enums; the server keeps the full DataHub context local and derives all entity-bearing prose, evidence, and owner assignments from that verified context.
+The model never receives credentials, raw warehouse data, entity names, owner identities, URNs, field names, governance labels, descriptions, or prior-document text. It receives only a bounded typed projection: normalized change type and environment, schema-verification status, and counts for downstream assets, reporting assets, owners, unowned assets, governance signals, and prior incidents. Codex can return only a severity and a bounded list of risk-factor enums; the server keeps the full DataHub context local and derives all entity-bearing prose and evidence from that verified context. Before any response or write-back is constructed, owner display names and free-form roles are replaced with stable response-local aliases such as `Catalog owner 01`, preserving counts and assignments without exposing identities in the public demo.
 
 ## Prerequisites
 
@@ -104,7 +105,8 @@ This mode is visibly labeled **Fixture · no model call**. It replaces only the 
 1. Keep the preselected `analytics.order_details` asset.
 2. Choose **Drop column**, enter `discount_amount`, and keep `PROD`.
 3. Click **Run impact loop**.
-4. Inspect the DataHub-grounded impact projection, governance evidence, prior-memory count, business impact, and owner-bound actions.
+4. Inspect the DataHub-grounded impact projection, governance evidence, prior-memory count,
+   business impact, and catalog-owner-alias-bound actions.
 5. Confirm that the fifth stage says **Approval required** and DataHub has not been modified.
 6. Click **Approve & write back to DataHub**.
 7. Follow the success link and inspect the new Analysis document in DataHub.
@@ -121,7 +123,8 @@ The implementation deliberately has no API-provider adapter. [`backend/contextlo
   model subprocess is invoked;
 - rejecting unexpected free-text fields and risk factors unsupported by the retrieved context;
 - deriving all counts and evidence deterministically from DataHub;
-- generating entity-bearing action text server-side and assigning only retrieved owners, or the explicit `Unassigned` status when none exists.
+- generating entity-bearing action text server-side and assigning only stable aliases for
+  retrieved owners, or the explicit `Unassigned` status when none exists.
 
 The deterministic fixture is enabled only by `CONTEXTLOOP_FAKE_CODEX=1` for free judge access, unit tests, and browser regression tests. It makes no model call and is not the product default.
 
@@ -159,8 +162,10 @@ THIRD_PARTY_NOTICES.md      Direct dependency and sample-data notices
 - Never paste a Codex, ChatGPT, DataHub, or Devpost credential into this repository.
 - The local DataHub token remains in DataHub CLI's user configuration outside the repository.
 - The agent receives metadata from the public sample pack, not business records.
-- Owner email addresses and unsafe structured-property values are excluded from model context.
-- Catalog descriptions and prior document excerpts are treated as untrusted data.
+- Owner identities, entity labels, governance text, descriptions, and prior-document text are
+  excluded from model context; the model receives only typed non-identifying signals.
+- Owner display names and free-form roles are replaced with response-local aliases before API
+  responses and write-backs are constructed.
 - `codex exec` is read-only and ephemeral.
 - Catalog mutation is separated from model reasoning and requires an explicit UI action.
 

@@ -34,13 +34,14 @@ The orchestrator assesses at most the first 10 downstream results returned by Da
 
 ### Codex OAuth runner
 
-The model process uses the local Codex CLI and ChatGPT OAuth. It is ephemeral, read-only, schema-constrained, and receives only a compact JSON metadata projection. Email-like values and unsafe structured properties are removed. Descriptions and prior-document excerpts are explicitly marked as untrusted data. Its output contract contains only severity and bounded risk-factor enums. The orchestrator rejects unsupported factors and generates all entity-bearing prose, evidence, counts, actions, and owner assignments deterministically from DataHub context.
+The model process uses the local Codex CLI and ChatGPT OAuth. It is ephemeral, read-only, schema-constrained, and receives only a compact non-identifying JSON projection of typed counts, normalized enums, and schema-verification status. Entity names, owner identities, URNs, field names, governance labels, descriptions, and prior-document text remain outside the model subprocess. Its output contract contains only severity and bounded risk-factor enums. The orchestrator rejects unsupported factors and generates all entity-bearing prose, evidence, counts, and actions deterministically from DataHub context. Before public responses or write-backs are constructed, owner display names and free-form roles are replaced with stable response-local aliases.
 
 ## Invariants
 
 1. The model process environment never contains `OPENAI_API_KEY`.
 2. A non-ChatGPT Codex login fails closed.
-3. Asset and owner names come from DataHub.
+3. Asset names come from DataHub; owner assignments use stable response-local aliases for
+   verified DataHub owner records.
 4. Affected counts, evidence, and entity-bearing action text are computed from DataHub context rather than model free text.
 5. Model reasoning cannot directly mutate DataHub.
 6. Write-back requires a second, explicit user action.
@@ -48,6 +49,7 @@ The model process uses the local Codex CLI and ChatGPT OAuth. It is ephemeral, r
 8. Free judge mode makes no model call and is visibly distinguished from the OAuth release path.
 9. Governance signals apply to the source asset and are never promoted to column-level claims without explicit evidence.
 10. New incident memory links to prior related memory as well as affected assets.
+11. Owner display names and free-form roles do not cross the public API or write-back boundary.
 
 ## Failure handling
 

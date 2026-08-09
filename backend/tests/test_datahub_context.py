@@ -117,7 +117,32 @@ def test_collect_context_uses_canonical_dataset_name_and_environment(monkeypatch
                 "urn": ASSET_URN,
                 "properties": {"name": "unqualified_request_alias"},
                 "platform": {"name": "dbt"},
-            }
+                "ownership": {
+                    "owners": [
+                        {
+                            "owner": {"properties": {"displayName": "PRIVATE_OWNER_ALPHA"}},
+                            "ownershipType": {"info": {"name": "PRIVATE_ROLE_ALPHA"}},
+                        }
+                    ]
+                },
+            },
+            {
+                "urn": DOWNSTREAM_URN,
+                "properties": {"name": "analytics.order_rollup"},
+                "platform": {"name": "snowflake"},
+                "ownership": {
+                    "owners": [
+                        {
+                            "owner": {"properties": {"displayName": "PRIVATE_OWNER_ALPHA"}},
+                            "ownershipType": {"info": {"name": "PRIVATE_ROLE_ALPHA"}},
+                        },
+                        {
+                            "owner": {"properties": {"displayName": "PRIVATE_OWNER_BETA"}},
+                            "ownershipType": {"info": {"name": "PRIVATE_ROLE_BETA"}},
+                        },
+                    ]
+                },
+            },
         ],
     )
     monkeypatch.setattr(datahub_service, "_prior_incident_memories", lambda *_args: [])
@@ -139,4 +164,19 @@ def test_collect_context_uses_canonical_dataset_name_and_environment(monkeypatch
     assert source.name == canonical_name
     assert [node.urn for node in nodes] == [ASSET_URN, DOWNSTREAM_URN]
     assert [asset["urn"] for asset in context["downstream_assets"]] == [DOWNSTREAM_URN]
+    assert [owner.name for owner in source.owners] == ["Catalog owner 01"]
+    assert [owner.name for owner in nodes[1].owners] == [
+        "Catalog owner 01",
+        "Catalog owner 02",
+    ]
+    assert context["owner_names"] == ["Catalog owner 01", "Catalog owner 02"]
+    public_payload = json.dumps(
+        {
+            "context": context,
+            "source": source.model_dump(),
+            "nodes": [node.model_dump() for node in nodes],
+        }
+    )
+    assert "PRIVATE_OWNER" not in public_payload
+    assert "PRIVATE_ROLE" not in public_payload
     assert len(edges) == 1

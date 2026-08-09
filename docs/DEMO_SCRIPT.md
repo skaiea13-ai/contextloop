@@ -31,7 +31,7 @@ Let the five-stage ledger animate.
 
 **Narration:**
 
-“Agent Context Kit first verifies the asset through search, then loads the exact schema field, ownership, governance signals, and checks for prior incident memories. It queries column-level lineage up to three hops, then builds a bounded, source-centered impact projection for the model and interface.”
+“Agent Context Kit first verifies the asset through search, then loads the exact schema field, ownership, governance signals, and checks for prior incident memories. It queries column-level lineage up to three hops and builds the bounded, source-centered projection shown here. The model receives only non-identifying typed counts, enums, and verification status.”
 
 When complete, show the bounded projection, its overflow count, and the `10 assets` evidence count.
 
@@ -41,7 +41,7 @@ Pan attention to the right inspector.
 
 **Narration:**
 
-“ContextLoop found Looker, Power BI, and Snowflake dependencies. Codex returns only severity and bounded risk enums; counts, evidence, entity claims, and actions are derived from DataHub. Every recommended owner is constrained to catalog owner names, and asset-level governance is never misrepresented as a column-level claim.”
+“ContextLoop found Looker, Power BI, and Snowflake dependencies. Codex returns only severity and bounded risk enums; counts, evidence, entity claims, and actions are derived from DataHub. Every recommended owner is constrained to a stable alias for a verified catalog owner, so the public demo does not expose owner identities. Asset-level governance is never misrepresented as a column-level claim.”
 
 Briefly highlight the evidence bullets and two action rows.
 

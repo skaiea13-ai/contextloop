@@ -130,6 +130,26 @@ def _owners(entity: dict[str, Any]) -> list[Owner]:
     return output
 
 
+def _alias_node_owners(nodes: list[GraphNode]) -> list[GraphNode]:
+    """Replace catalog display names and roles with stable response-local aliases."""
+    owner_names = sorted({owner.name for node in nodes for owner in node.owners})
+    aliases = {
+        owner_name: f"Catalog owner {index:02d}"
+        for index, owner_name in enumerate(owner_names, start=1)
+    }
+    return [
+        node.model_copy(
+            update={
+                "owners": [
+                    Owner(name=aliases[owner.name], role="Catalog owner")
+                    for owner in node.owners
+                ]
+            }
+        )
+        for node in nodes
+    ]
+
+
 def _search_query(value: str) -> str:
     tokens = re.findall(r"[A-Za-z0-9]+", value)
     return "/q " + "+".join(tokens)
@@ -357,6 +377,9 @@ class DataHubService:
             )
             nodes.append(node)
             edges.append(GraphEdge(source="source", target=node.id, kind="downstream"))
+
+        nodes = _alias_node_owners(nodes)
+        source_node = nodes[0]
 
         owner_names: list[str] = []
         for node in nodes:

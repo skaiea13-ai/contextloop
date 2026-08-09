@@ -65,7 +65,7 @@ def assessment() -> ImpactAssessment:
             ImpactAction(
                 id=index,
                 title=f"Validate downstream dependency {index}.",
-                owner="Data Platform Team",
+                owner="Catalog owner 01",
                 priority="now",
             )
             for index in range(1, 4)
