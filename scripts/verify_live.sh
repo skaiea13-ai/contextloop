@@ -8,6 +8,15 @@ PORT="${CONTEXTLOOP_RELEASE_PORT:-8010}"
 BASE_URL="http://127.0.0.1:${PORT}"
 TEMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/contextloop-release.XXXXXX")"
 BACKEND_PID=""
+LOCAL_SESSION_TOKEN="${CONTEXTLOOP_LOCAL_TOKEN:-}"
+if [[ -n "$LOCAL_SESSION_TOKEN" && ${#LOCAL_SESSION_TOKEN} -lt 32 ]]; then
+  echo "CONTEXTLOOP_LOCAL_TOKEN must contain at least 32 characters." >&2
+  exit 1
+fi
+if [[ -z "$LOCAL_SESSION_TOKEN" ]]; then
+  LOCAL_SESSION_TOKEN="$(uv run python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+fi
+export CONTEXTLOOP_LOCAL_TOKEN="$LOCAL_SESSION_TOKEN"
 
 cleanup() {
   if [[ -n "$BACKEND_PID" ]]; then
@@ -37,7 +46,9 @@ for _ in {1..120}; do
     sed -n '1,120p' "$TEMP_DIR/backend.log" >&2
     exit 1
   fi
-  if curl --fail --silent "$BASE_URL/api/health" >"$TEMP_DIR/health.json"; then
+  if curl --fail --silent \
+    --header "X-ContextLoop-Token: $LOCAL_SESSION_TOKEN" \
+    "$BASE_URL/api/health" >"$TEMP_DIR/health.json"; then
     backend_ready=1
     break
   fi
@@ -68,6 +79,7 @@ jq --null-input '{
 curl --fail --silent --show-error \
   --request POST "$BASE_URL/api/analyze" \
   --header 'Content-Type: application/json' \
+  --header "X-ContextLoop-Token: $LOCAL_SESSION_TOKEN" \
   --data-binary @"$TEMP_DIR/request.json" >"$TEMP_DIR/analysis.json"
 
 jq --exit-status '
@@ -111,6 +123,7 @@ jq --null-input --arg run_id "$run_id" '{run_id: $run_id, approved: true}' \
 curl --fail --silent --show-error \
   --request POST "$BASE_URL/api/write-back" \
   --header 'Content-Type: application/json' \
+  --header "X-ContextLoop-Token: $LOCAL_SESSION_TOKEN" \
   --data-binary @"$TEMP_DIR/writeback-request.json" >"$TEMP_DIR/writeback.json"
 
 document_urn="$(jq --raw-output '.document_urn' "$TEMP_DIR/writeback.json")"

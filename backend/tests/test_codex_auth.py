@@ -81,6 +81,7 @@ def test_oauth_environment_is_an_allowlist(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setenv("OPENAI_API_KEY", "must-not-propagate")
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "must-not-propagate")
     monkeypatch.setenv("CONTEXTLOOP_INTERNAL_SECRET", "must-not-propagate")
+    monkeypatch.setenv("CONTEXTLOOP_LOCAL_TOKEN", "must-not-propagate")
     monkeypatch.setenv("HOME", "/tmp/oauth-home")
     monkeypatch.setenv("CODEX_HOME", "/tmp/oauth-home/.codex")
     monkeypatch.setenv("HTTPS_PROXY", "http://proxy.invalid")
@@ -93,6 +94,7 @@ def test_oauth_environment_is_an_allowlist(monkeypatch: pytest.MonkeyPatch) -> N
     assert "OPENAI_API_KEY" not in child_environment
     assert "AWS_SECRET_ACCESS_KEY" not in child_environment
     assert "CONTEXTLOOP_INTERNAL_SECRET" not in child_environment
+    assert "CONTEXTLOOP_LOCAL_TOKEN" not in child_environment
 
 
 def test_model_output_schema_has_no_free_text_fields() -> None:

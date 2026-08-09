@@ -15,6 +15,13 @@ SOURCE_URN = "urn:li:dataset:(urn:li:dataPlatform:dbt,db.source,PROD)"
 DOWNSTREAM_URN = "urn:li:dataset:(urn:li:dataPlatform:looker,report.orders,PROD)"
 PRIOR_DOCUMENT_URN = "urn:li:document:prior"
 SAVED_DOCUMENT_URN = "urn:li:document:verified"
+LOCAL_SESSION_TOKEN = "test-contextloop-session-token-with-32-bytes"
+LOCAL_SESSION_HEADER = {"X-ContextLoop-Token": LOCAL_SESSION_TOKEN}
+
+
+@pytest.fixture(autouse=True)
+def configure_local_session(monkeypatch) -> None:
+    monkeypatch.setenv("CONTEXTLOOP_LOCAL_TOKEN", LOCAL_SESSION_TOKEN)
 
 
 class StubDataHubContext:
@@ -70,10 +77,11 @@ def assessment() -> ImpactAssessment:
 async def test_writeback_rejects_unknown_run() -> None:
     main.pending_write_backs.clear()
     async with AsyncClient(
-        transport=ASGITransport(app=main.app), base_url="http://test"
+        transport=ASGITransport(app=main.app), base_url="http://127.0.0.1"
     ) as client:
         response = await client.post(
             "/api/write-back",
+            headers=LOCAL_SESSION_HEADER,
             json={"run_id": "CL-MISSING", "approved": True},
         )
     assert response.status_code == 404
@@ -99,16 +107,18 @@ async def test_writeback_uses_server_side_grounded_payload(monkeypatch) -> None:
 
     monkeypatch.setattr(main.datahub, "save_incident_memory", fake_save_incident_memory)
     async with AsyncClient(
-        transport=ASGITransport(app=main.app), base_url="http://test"
+        transport=ASGITransport(app=main.app), base_url="http://127.0.0.1"
     ) as client:
         tampered_response = await client.post(
             "/api/write-back",
+            headers=LOCAL_SESSION_HEADER,
             json={"run_id": run_id, "approved": True, "impact": {"headline": "tampered"}},
         )
         assert tampered_response.status_code == 422
 
         response = await client.post(
             "/api/write-back",
+            headers=LOCAL_SESSION_HEADER,
             json={"run_id": run_id, "approved": True},
         )
 
@@ -142,10 +152,11 @@ async def test_writeback_preserves_pending_analysis_when_verification_fails(monk
 
     monkeypatch.setattr(main.datahub, "save_incident_memory", fake_save_incident_memory)
     async with AsyncClient(
-        transport=ASGITransport(app=main.app), base_url="http://test"
+        transport=ASGITransport(app=main.app), base_url="http://127.0.0.1"
     ) as client:
         response = await client.post(
             "/api/write-back",
+            headers=LOCAL_SESSION_HEADER,
             json={"run_id": run_id, "approved": True},
         )
 

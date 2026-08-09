@@ -72,7 +72,11 @@ cd contextloop
 ./scripts/dev.sh
 ```
 
-Open [http://127.0.0.1:5173](http://127.0.0.1:5173).
+`dev.sh` generates a high-entropy local session token, starts both services, and opens the
+protected UI in the default browser. The token travels in the URL fragment, which is not sent
+in the HTTP request; the UI removes it immediately and keeps it only in that browser tab's
+session storage. Direct API calls without the token, or requests with an unexpected Host, fail
+closed.
 
 The bootstrap script:
 

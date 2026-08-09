@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import App from "./App";
 import type { AnalysisResponse, BootstrapResponse, WriteBackResponse } from "./types";
 
@@ -86,6 +86,8 @@ const writeBackResponse: WriteBackResponse = {
   saved_at: "2026-07-15T09:31:00Z",
 };
 
+const localSessionToken = "test-contextloop-session-token-with-32-bytes";
+
 function jsonResponse(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
     status,
@@ -112,9 +114,16 @@ function installApiMock(options: ApiMockOptions = {}) {
   });
 }
 
+beforeEach(() => {
+  window.sessionStorage.clear();
+  window.history.replaceState({}, "", `/#contextloop_token=${localSessionToken}`);
+});
+
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  window.sessionStorage.clear();
+  window.history.replaceState({}, "", "/");
 });
 
 describe("ContextLoop impact flow", () => {
@@ -135,6 +144,8 @@ describe("ContextLoop impact flow", () => {
 
     expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/analyze");
     expect(fetchMock.mock.calls[1]?.[1]?.method).toBe("POST");
+    expect(new Headers(fetchMock.mock.calls[1]?.[1]?.headers).get("X-ContextLoop-Token"))
+      .toBe(localSessionToken);
     expect(JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))).toEqual({
       asset_urn: "urn:li:dataset:test-source",
       asset_name: "analytics.order_details",
@@ -154,10 +165,13 @@ describe("ContextLoop impact flow", () => {
 
     expect(fetchMock.mock.calls[2]?.[0]).toBe("/api/write-back");
     expect(fetchMock.mock.calls[2]?.[1]?.method).toBe("POST");
+    expect(new Headers(fetchMock.mock.calls[2]?.[1]?.headers).get("X-ContextLoop-Token"))
+      .toBe(localSessionToken);
     expect(JSON.parse(String(fetchMock.mock.calls[2]?.[1]?.body))).toEqual({
       run_id: analysisResponse.run_id,
       approved: true,
     });
+    expect(window.location.hash).toBe("");
   });
 
   test("recovers from a write-back error and lets the user retry the same approved analysis", async () => {

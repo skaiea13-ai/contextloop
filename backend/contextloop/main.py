@@ -5,10 +5,12 @@ import os
 import time
 from datetime import UTC, datetime
 from pathlib import Path
+from secrets import compare_digest
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from .codex_auth import CodexAuthError, CodexAuthRunner
@@ -29,13 +31,40 @@ from .models import (
     WriteBackResponse,
 )
 
+LOCAL_SESSION_HEADER = "X-ContextLoop-Token"
+MIN_LOCAL_SESSION_TOKEN_LENGTH = 32
+
+
+def require_local_session(
+    supplied_token: str | None = Header(default=None, alias=LOCAL_SESSION_HEADER),
+) -> None:
+    expected_token = os.getenv("CONTEXTLOOP_LOCAL_TOKEN", "")
+    if len(expected_token) < MIN_LOCAL_SESSION_TOKEN_LENGTH:
+        raise HTTPException(
+            status_code=503,
+            detail="The local session gate is not configured.",
+        )
+    if supplied_token is None or not compare_digest(supplied_token, expected_token):
+        raise HTTPException(
+            status_code=401,
+            detail="A valid local session token is required.",
+        )
+
+
+LOCAL_SESSION_DEPENDENCIES = [Depends(require_local_session)]
+
+
 app = FastAPI(title="ContextLoop", version="0.1.0")
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=["localhost", "127.0.0.1"],
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=False,
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", LOCAL_SESSION_HEADER],
 )
 
 datahub = DataHubService()
@@ -55,7 +84,7 @@ async def codex_status() -> tuple[bool, str, str]:
     return ok, detail, "chatgpt_oauth"
 
 
-@app.get("/api/health")
+@app.get("/api/health", dependencies=LOCAL_SESSION_DEPENDENCIES)
 async def health() -> dict[str, object]:
     datahub_ok, datahub_detail = await asyncio.to_thread(datahub.health)
     codex_ok, codex_detail, execution_mode = await codex_status()
@@ -72,7 +101,11 @@ async def health() -> dict[str, object]:
     }
 
 
-@app.get("/api/bootstrap", response_model=BootstrapResponse)
+@app.get(
+    "/api/bootstrap",
+    response_model=BootstrapResponse,
+    dependencies=LOCAL_SESSION_DEPENDENCIES,
+)
 async def bootstrap() -> BootstrapResponse:
     datahub_ok, datahub_detail = await asyncio.to_thread(datahub.health)
     codex_ok, codex_detail, execution_mode = await codex_status()
@@ -88,7 +121,11 @@ async def bootstrap() -> BootstrapResponse:
     )
 
 
-@app.post("/api/analyze", response_model=AnalysisResponse)
+@app.post(
+    "/api/analyze",
+    response_model=AnalysisResponse,
+    dependencies=LOCAL_SESSION_DEPENDENCIES,
+)
 async def analyze(request: AnalyzeRequest) -> AnalysisResponse:
     try:
         context, source, nodes, edges, datahub_timings = await asyncio.to_thread(
@@ -181,7 +218,11 @@ async def analyze(request: AnalyzeRequest) -> AnalysisResponse:
     )
 
 
-@app.post("/api/write-back", response_model=WriteBackResponse)
+@app.post(
+    "/api/write-back",
+    response_model=WriteBackResponse,
+    dependencies=LOCAL_SESSION_DEPENDENCIES,
+)
 async def write_back(request: WriteBackRequest) -> WriteBackResponse:
     pending = pending_write_backs.get(request.run_id)
     if pending is None:
