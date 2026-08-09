@@ -60,7 +60,15 @@ QA screenshots are intentionally not stored in the repository because they are t
 - Full decoding, SHA-256 verification, twelve representative-frame inspections, exact subtitle round-trip extraction, and black-frame detection passed. Mean audio level is -16.6 dB with a -1.2 dB peak; all seven narration sections finish inside their assigned timeline windows.
 - Final SHA-256: `eae90cb12aa691679997c2876fd403a718503f4fcb8fc903bc8cb3301496f627`.
 - The video contains only page-content captures from the actual OAuth run and local DataHub document. It contains no terminal, browser profile, local filesystem path, email, credential, copyrighted music, or fixture-mode label.
-- The reviewed local artifact remains excluded from Git. It was published at `https://youtu.be/VW5ZLLwqPoQ` with manually uploaded English captions and a YouTube AI-use disclosure for the synthetic narration.
+- The reviewed local artifact remains excluded from Git. It was originally published at `https://youtu.be/VW5ZLLwqPoQ` with manually uploaded English captions and a YouTube AI-use disclosure for the synthetic narration; that upload is now unlisted after the public replacement below.
+
+## Public calm-Aiden replacement
+
+- The replacement is 164.960 seconds, 1920×1080 at 30 fps, with H.264 video and mono 48 kHz AAC narration. Its SHA-256 is `badbcbfcdc1d4b9a6410f632a93372a37dae56c5a5cbabecc37bcc8b86d7fb3c`.
+- The continuous application footage shows real-OAuth run `CL-AAD1`: DataHub context retrieval, ChatGPT OAuth reasoning through Codex CLI, explicit approval, write-back, and the exact new DataHub document opened after creation.
+- Full decoding passed. Privacy review covered 33 sampled frames and found no credentials, email, private filesystem path, or personal phone number; the MP4 contains no subtitle, attachment, chapter, or unexpected metadata stream.
+- The calm Aiden narration was generated locally with Qwen3-TTS and is disclosed in the YouTube description. English captions were manually uploaded from the reviewed SRT.
+- The replacement is public at `https://youtu.be/rbLMs7jN6eY`; YouTube reported no copyright-check issue. Devpost embeds this new video ID and no longer embeds the previous upload.
 
 ## Publication status
 
@@ -68,5 +76,5 @@ QA screenshots are intentionally not stored in the repository because they are t
 - Public repository URL: `https://github.com/skaiea13-ai/contextloop`.
 - Public Devpost submission: `https://devpost.com/software/contextloop`; Devpost displayed `Project submitted!`, embedded the public demo video, and linked the public GitHub repository.
 - Anonymous HTTP, raw-license, and GitHub API checks confirmed public access, Apache-2.0 detection, and pre-submission public head `668176d02fe7f0e31419dcae524f2eb55972ced0`.
-- Public demonstration video: `https://youtu.be/VW5ZLLwqPoQ`; YouTube reports a 2:36 duration, English default language, Science & Technology category, and no copyright-check issues.
+- Public demonstration video: `https://youtu.be/rbLMs7jN6eY`; YouTube reports a 2:45 duration and no copyright-check issues. The previous upload is unlisted.
 - Public commit-author identity: isolated release commits use the generic GitHub noreply identity `ContextLoop Release`.
