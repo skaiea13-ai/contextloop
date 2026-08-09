@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import os
 import re
 import time
-from datetime import UTC, datetime
+from datetime import datetime
+from threading import Lock
 from typing import Any
 
 from datahub.metadata.urns import DatasetUrn, DocumentUrn
@@ -40,10 +42,45 @@ SAFE_STRUCTURED_PROPERTIES = {
 EMAIL_PATTERN = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 WRITE_BACK_VERIFY_ATTEMPTS = 4
 WRITE_BACK_VERIFY_DELAY_SECONDS = 0.25
+MAX_ASSET_SEARCH_RESULTS = 20
+MAX_LINEAGE_ASSETS = 10
+MAX_OWNERS_PER_ENTITY = 10
+MAX_GOVERNANCE_NAMES = 20
+MAX_RELATED_DOCUMENT_URNS = 100
+MAX_PRIOR_INCIDENT_MEMORIES = 3
+MAX_METADATA_SCAN_ITEMS = 100
+CONTEXTLOOP_DOCUMENT_URN_PATTERN = re.compile(
+    r"urn:li:document:shared-contextloop-[0-9a-f]{32}"
+)
+SAVE_DOCUMENT_RESTRICT_UPDATES_ENV = "SAVE_DOCUMENT_RESTRICT_UPDATES"
+_SAVE_DOCUMENT_ENV_LOCK = Lock()
 
 
 class DataHubWriteBackError(RuntimeError):
     """Raised when a DataHub document write cannot be proven from persisted state."""
+
+
+def _save_document_to_generated_target(*, document_urn: str, **kwargs: Any) -> Any:
+    """Use Agent Context Kit's URN upsert only for a server-generated document target.
+
+    Agent Context Kit 1.6.0 supports a supplied URN, but its default hierarchy preflight treats
+    the SDK's not-found exception as a hard failure instead of allowing the documented first
+    upsert. ContextLoop already constrains the target and all content server-side, so the SDK
+    restriction is disabled only while this serialized call executes and is then restored.
+    """
+    if CONTEXTLOOP_DOCUMENT_URN_PATTERN.fullmatch(document_urn) is None:
+        raise DataHubWriteBackError("The approved ContextLoop document target is invalid.")
+
+    with _SAVE_DOCUMENT_ENV_LOCK:
+        previous = os.environ.get(SAVE_DOCUMENT_RESTRICT_UPDATES_ENV)
+        os.environ[SAVE_DOCUMENT_RESTRICT_UPDATES_ENV] = "false"
+        try:
+            return save_document(urn=document_urn, **kwargs)
+        finally:
+            if previous is None:
+                os.environ.pop(SAVE_DOCUMENT_RESTRICT_UPDATES_ENV, None)
+            else:
+                os.environ[SAVE_DOCUMENT_RESTRICT_UPDATES_ENV] = previous
 
 
 def _document_urn_from_save_result(result: Any) -> str:
@@ -114,7 +151,7 @@ def _platform(entity: dict[str, Any]) -> str:
 def _owners(entity: dict[str, Any]) -> list[Owner]:
     output: list[Owner] = []
     seen: set[str] = set()
-    for entry in (entity.get("ownership") or {}).get("owners", []):
+    for entry in (entity.get("ownership") or {}).get("owners", [])[:MAX_METADATA_SCAN_ITEMS]:
         owner = entry.get("owner") or {}
         properties = owner.get("properties") or owner.get("info") or {}
         name = properties.get("displayName") or owner.get("name")
@@ -127,6 +164,8 @@ def _owners(entity: dict[str, Any]) -> list[Owner]:
         ownership_type = (entry.get("ownershipType") or {}).get("info") or {}
         role = _clean_text(str(ownership_type.get("name") or "Owner"), 80)
         output.append(Owner(name=name, role=role))
+        if len(output) >= MAX_OWNERS_PER_ENTITY:
+            break
     return output
 
 
@@ -162,12 +201,17 @@ def _clean_text(value: str, limit: int) -> str:
 
 def _name_list(container: dict[str, Any], collection: str, item_key: str) -> list[str]:
     output: list[str] = []
-    for entry in container.get(collection, []):
+    for entry in container.get(collection, [])[:MAX_METADATA_SCAN_ITEMS]:
         item = entry.get(item_key) or {}
         properties = item.get("properties") or {}
-        name = properties.get("name") or item.get("urn", "").rsplit(":", 1)[-1]
+        name = _clean_text(
+            str(properties.get("name") or item.get("urn", "").rsplit(":", 1)[-1]),
+            120,
+        )
         if name and name not in output:
             output.append(name)
+        if len(output) >= MAX_GOVERNANCE_NAMES:
+            break
     return output
 
 
@@ -181,15 +225,19 @@ def _governance_context(entity: dict[str, Any]) -> dict[str, Any]:
     tags = _name_list(entity.get("tags") or {}, "tags", "tag")
     terms = _name_list(entity.get("glossaryTerms") or {}, "terms", "term")
     domain = ((entity.get("domain") or {}).get("domain") or {}).get("properties") or {}
-    domain_name = domain.get("name")
+    domain_name = _clean_text(str(domain.get("name") or ""), 120) or None
 
-    custom_properties = {
-        item.get("key"): item.get("value")
-        for item in properties.get("customProperties", [])
-        if item.get("key") in SAFE_CUSTOM_PROPERTIES and item.get("value") is not None
-    }
+    custom_properties: dict[str, str] = {}
+    for item in properties.get("customProperties", [])[:MAX_METADATA_SCAN_ITEMS]:
+        key = item.get("key")
+        value = item.get("value")
+        if key in SAFE_CUSTOM_PROPERTIES and value is not None:
+            custom_properties[key] = _clean_text(str(value), 160)
+        if len(custom_properties) >= len(SAFE_CUSTOM_PROPERTIES):
+            break
     structured_properties: dict[str, str | int | float] = {}
-    for item in (entity.get("structuredProperties") or {}).get("properties", []):
+    structured_items = (entity.get("structuredProperties") or {}).get("properties", [])
+    for item in structured_items[:MAX_METADATA_SCAN_ITEMS]:
         definition = (item.get("structuredProperty") or {}).get("definition") or {}
         display_name = definition.get("displayName")
         if display_name not in SAFE_STRUCTURED_PROPERTIES:
@@ -198,7 +246,11 @@ def _governance_context(entity: dict[str, Any]) -> dict[str, Any]:
             candidate = value.get("stringValue", value.get("numberValue"))
             if candidate is None or (isinstance(candidate, str) and "@" in candidate):
                 continue
-            structured_properties[display_name] = candidate
+            structured_properties[display_name] = (
+                _clean_text(candidate, 160) if isinstance(candidate, str) else candidate
+            )
+            break
+        if len(structured_properties) >= len(SAFE_STRUCTURED_PROPERTIES):
             break
 
     signal_labels = [
@@ -216,16 +268,20 @@ def _governance_context(entity: dict[str, Any]) -> dict[str, Any]:
         "domain": domain_name,
         "custom_properties": custom_properties,
         "structured_properties": structured_properties,
-        "signal_labels": signal_labels,
+        "signal_labels": signal_labels[:MAX_GOVERNANCE_NAMES],
     }
 
 
 def _related_document_urns(entity: dict[str, Any]) -> set[str]:
-    return {
-        item["urn"]
-        for item in (entity.get("relatedDocuments") or {}).get("documents", [])
-        if item.get("urn")
-    }
+    urns: set[str] = set()
+    related_documents = (entity.get("relatedDocuments") or {}).get("documents", [])
+    for item in related_documents[:MAX_METADATA_SCAN_ITEMS]:
+        urn = item.get("urn")
+        if urn:
+            urns.add(urn)
+        if len(urns) >= MAX_RELATED_DOCUMENT_URNS:
+            break
+    return urns
 
 
 def _prior_incident_memories(entity: dict[str, Any], column: str) -> list[dict[str, str]]:
@@ -237,13 +293,13 @@ def _prior_incident_memories(entity: dict[str, Any], column: str) -> list[dict[s
         num_results=10,
     )
     candidates: list[dict[str, str]] = []
-    for result in results.get("searchResults", []):
+    for result in results.get("searchResults", [])[:10]:
         document = result.get("entity") or {}
         urn = document.get("urn")
         title = (document.get("info") or {}).get("title") or ""
         if urn in related_urns and title.startswith("ContextLoop "):
             candidates.append({"urn": urn, "title": _clean_text(title, 220)})
-    candidates = candidates[:3]
+    candidates = candidates[:MAX_PRIOR_INCIDENT_MEMORIES]
     if not candidates:
         return []
 
@@ -258,7 +314,7 @@ def _prior_incident_memories(entity: dict[str, Any], column: str) -> list[dict[s
             ((item.get("matches") or [{}])[0]).get("excerpt") or "",
             520,
         )
-        for item in excerpts.get("results", [])
+        for item in excerpts.get("results", [])[:MAX_PRIOR_INCIDENT_MEMORIES]
         if item.get("urn")
     }
     return [
@@ -301,7 +357,7 @@ class DataHubService:
             )
             searched_urns = {
                 (result.get("entity") or {}).get("urn")
-                for result in asset_search.get("searchResults", [])
+                for result in asset_search.get("searchResults", [])[:MAX_ASSET_SEARCH_RESULTS]
             }
             if asset_urn not in searched_urns:
                 raise ValueError("The selected asset could not be verified through DataHub search.")
@@ -309,7 +365,7 @@ class DataHubService:
             read_ms = int((time.perf_counter() - stage_started) * 1000)
             matching_fields = [
                 field.get("fieldPath")
-                for field in fields.get("fields", [])
+                for field in fields.get("fields", [])[:MAX_ASSET_SEARCH_RESULTS]
                 if field.get("fieldPath") == column
             ]
             if not matching_fields:
@@ -330,16 +386,22 @@ class DataHubService:
             )
             downstream_results: list[dict[str, Any]] = []
             seen_downstream_urns = {asset_urn}
-            for result in raw_downstream_results:
+            for result in raw_downstream_results[:MAX_ASSET_SEARCH_RESULTS]:
                 urn = result.get("entity", {}).get("urn")
                 if not urn or urn in seen_downstream_urns:
                     continue
                 seen_downstream_urns.add(urn)
                 downstream_results.append(result)
+                if len(downstream_results) >= MAX_LINEAGE_ASSETS:
+                    break
             downstream_urns = [result["entity"]["urn"] for result in downstream_results]
             all_urns = [asset_urn, *downstream_urns]
             details = get_entities(all_urns)
-            detail_by_urn = {entity.get("urn"): entity for entity in details if entity.get("urn")}
+            detail_by_urn = {
+                entity.get("urn"): entity
+                for entity in details[: len(all_urns)]
+                if entity.get("urn")
+            }
             root_entity = detail_by_urn.get(asset_urn) or {
                 "urn": asset_urn,
                 "name": canonical_asset_name,
@@ -361,7 +423,7 @@ class DataHubService:
 
         nodes: list[GraphNode] = [source_node]
         edges: list[GraphEdge] = []
-        for index, result in enumerate(downstream_results[:10], start=1):
+        for index, result in enumerate(downstream_results, start=1):
             summary = result.get("entity") or {}
             urn = summary.get("urn")
             if not urn:
@@ -414,6 +476,8 @@ class DataHubService:
         self,
         *,
         run_id: str,
+        document_urn: str,
+        reviewed_at: datetime,
         source_asset_urn: str,
         related_asset_urns: list[str],
         related_document_urns: list[str],
@@ -421,6 +485,7 @@ class DataHubService:
         change_type: str,
         impact: ImpactAssessment,
     ) -> tuple[str, str]:
+        approved_document_urn = str(DocumentUrn.from_string(document_urn))
         title = f"ContextLoop {run_id}: {impact.headline}"
         actions = "\n".join(
             f"{action.id}. **{action.title}** — Owner: {action.owner}" for action in impact.actions
@@ -454,13 +519,14 @@ Prior incident memories linked: **{len(related_document_urns)}**
 
 ---
 Generated by ContextLoop from DataHub Agent Context Kit metadata.
-Reviewed through the explicit write-back approval step at {datetime.now(UTC).isoformat()}.
+Reviewed through the explicit write-back approval step at {reviewed_at.isoformat()}.
 """
         related = list(dict.fromkeys([source_asset_urn, *related_asset_urns]))
         related_documents = list(dict.fromkeys(related_document_urns))
         client = self._client()
         with DataHubContext(client):
-            result = save_document(
+            result = _save_document_to_generated_target(
+                document_urn=approved_document_urn,
                 document_type="Analysis",
                 title=title,
                 content=content,
@@ -469,6 +535,10 @@ Reviewed through the explicit write-back approval step at {datetime.now(UTC).iso
                 related_documents=related_documents or None,
             )
         document_urn = _document_urn_from_save_result(result)
+        if document_urn != approved_document_urn:
+            raise DataHubWriteBackError(
+                "DataHub returned a different document target than the approved write request."
+            )
 
         last_error: Exception | None = None
         for attempt in range(WRITE_BACK_VERIFY_ATTEMPTS):

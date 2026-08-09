@@ -61,6 +61,7 @@ export function writeBack(
 ): Promise<WriteBackResponse> {
   return requestJson<WriteBackResponse>("/api/write-back", {
     run_id: analysis.run_id,
+    write_back_token: analysis.write_back_token,
     approved: true,
   });
 }

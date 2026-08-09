@@ -86,6 +86,7 @@ jq --exit-status '
   ([.nodes[].owners[].name] | unique) as $catalog_owners |
   (
     .auth_mode == "chatgpt_oauth" and
+    (.write_back_token | test("^[0-9a-f]{64}$")) and
     ([$catalog_owners[] | test("^Catalog owner [0-9]{2}$")] | all) and
     ([.nodes[].owners[].role] | all(. == "Catalog owner")) and
     .impact.affected_asset_count == ((.nodes | length) - 1) and
@@ -121,7 +122,7 @@ for entry in entries:
     assert run_id not in title, "Document existed before explicit approval"
 PY
 
-jq --null-input --arg run_id "$run_id" '{run_id: $run_id, approved: true}' \
+jq '{run_id, write_back_token, approved: true}' "$TEMP_DIR/analysis.json" \
   >"$TEMP_DIR/writeback-request.json"
 
 curl --fail --silent --show-error \

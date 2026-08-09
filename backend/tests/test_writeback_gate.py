@@ -1,3 +1,6 @@
+import os
+from datetime import UTC, datetime
+
 import pytest
 from datahub.sdk import Document
 from httpx import ASGITransport, AsyncClient
@@ -14,9 +17,12 @@ from backend.contextloop.models import ImpactAction, ImpactAssessment, PendingWr
 SOURCE_URN = "urn:li:dataset:(urn:li:dataPlatform:dbt,db.source,PROD)"
 DOWNSTREAM_URN = "urn:li:dataset:(urn:li:dataPlatform:looker,report.orders,PROD)"
 PRIOR_DOCUMENT_URN = "urn:li:document:prior"
-SAVED_DOCUMENT_URN = "urn:li:document:verified"
+SAVED_DOCUMENT_ID = f"shared-contextloop-{'d' * 32}"
+SAVED_DOCUMENT_URN = f"urn:li:document:{SAVED_DOCUMENT_ID}"
 LOCAL_SESSION_TOKEN = "test-contextloop-session-token-with-32-bytes"
 LOCAL_SESSION_HEADER = {"X-ContextLoop-Token": LOCAL_SESSION_TOKEN}
+WRITE_BACK_TOKEN = "b" * 64
+RETRY_WRITE_BACK_TOKEN = "c" * 64
 
 
 @pytest.fixture(autouse=True)
@@ -82,7 +88,11 @@ async def test_writeback_rejects_unknown_run() -> None:
         response = await client.post(
             "/api/write-back",
             headers=LOCAL_SESSION_HEADER,
-            json={"run_id": "CL-MISSING", "approved": True},
+            json={
+                "run_id": "CL-MISSING",
+                "write_back_token": WRITE_BACK_TOKEN,
+                "approved": True,
+            },
         )
     assert response.status_code == 404
 
@@ -91,7 +101,9 @@ async def test_writeback_rejects_unknown_run() -> None:
 async def test_writeback_uses_server_side_grounded_payload(monkeypatch) -> None:
     run_id = "CL-TEST"
     main.pending_write_backs.clear()
-    main.pending_write_backs[run_id] = PendingWriteBack(
+    main.pending_write_backs[WRITE_BACK_TOKEN] = PendingWriteBack(
+        run_id=run_id,
+        document_urn=SAVED_DOCUMENT_URN,
         source_asset_urn="urn:li:dataset:test-source",
         related_asset_urns=["urn:li:dataset:test-downstream"],
         related_document_urns=["urn:li:document:prior"],
@@ -112,14 +124,23 @@ async def test_writeback_uses_server_side_grounded_payload(monkeypatch) -> None:
         tampered_response = await client.post(
             "/api/write-back",
             headers=LOCAL_SESSION_HEADER,
-            json={"run_id": run_id, "approved": True, "impact": {"headline": "tampered"}},
+            json={
+                "run_id": run_id,
+                "write_back_token": WRITE_BACK_TOKEN,
+                "approved": True,
+                "impact": {"headline": "tampered"},
+            },
         )
         assert tampered_response.status_code == 422
 
         response = await client.post(
             "/api/write-back",
             headers=LOCAL_SESSION_HEADER,
-            json={"run_id": run_id, "approved": True},
+            json={
+                "run_id": run_id,
+                "write_back_token": WRITE_BACK_TOKEN,
+                "approved": True,
+            },
         )
 
     assert response.status_code == 200
@@ -130,13 +151,15 @@ async def test_writeback_uses_server_side_grounded_payload(monkeypatch) -> None:
     assert response.json()["datahub_url"] == (
         "http://localhost:9002/document/urn:li:document:test"
     )
-    assert run_id not in main.pending_write_backs
+    assert WRITE_BACK_TOKEN not in main.pending_write_backs
 
 
 @pytest.mark.asyncio
 async def test_writeback_preserves_pending_analysis_when_verification_fails(monkeypatch) -> None:
     run_id = "CL-RETRY"
     pending = PendingWriteBack(
+        run_id=run_id,
+        document_urn=SAVED_DOCUMENT_URN,
         source_asset_urn=SOURCE_URN,
         related_asset_urns=[DOWNSTREAM_URN],
         related_document_urns=[PRIOR_DOCUMENT_URN],
@@ -145,7 +168,7 @@ async def test_writeback_preserves_pending_analysis_when_verification_fails(monk
         impact=assessment(),
     )
     main.pending_write_backs.clear()
-    main.pending_write_backs[run_id] = pending
+    main.pending_write_backs[RETRY_WRITE_BACK_TOKEN] = pending
 
     def fake_save_incident_memory(**_kwargs):
         raise RuntimeError("credential-bearing internal integration detail")
@@ -157,7 +180,11 @@ async def test_writeback_preserves_pending_analysis_when_verification_fails(monk
         response = await client.post(
             "/api/write-back",
             headers=LOCAL_SESSION_HEADER,
-            json={"run_id": run_id, "approved": True},
+            json={
+                "run_id": run_id,
+                "write_back_token": RETRY_WRITE_BACK_TOKEN,
+                "approved": True,
+            },
         )
 
     assert response.status_code == 502
@@ -168,7 +195,10 @@ async def test_writeback_preserves_pending_analysis_when_verification_fails(monk
         )
     }
     assert "credential" not in response.text
-    assert main.pending_write_backs[run_id] == pending
+    preserved = main.pending_write_backs[RETRY_WRITE_BACK_TOKEN]
+    assert preserved.run_id == pending.run_id
+    assert preserved.document_urn == pending.document_urn
+    assert preserved.reviewed_at is not None
 
 
 def test_save_incident_memory_requeries_and_verifies_persisted_document(monkeypatch) -> None:
@@ -178,8 +208,11 @@ def test_save_incident_memory_requeries_and_verifies_persisted_document(monkeypa
 
     def fake_save_document(**kwargs):
         captured.update(kwargs)
+        captured["restriction_during_save"] = os.environ.get(
+            "SAVE_DOCUMENT_RESTRICT_UPDATES"
+        )
         client.entities.document = Document.create_document(
-            id="verified",
+            id=SAVED_DOCUMENT_ID,
             title=kwargs["title"],
             text=kwargs["content"],
             subtype=kwargs["document_type"],
@@ -191,9 +224,12 @@ def test_save_incident_memory_requeries_and_verifies_persisted_document(monkeypa
     monkeypatch.setattr(datahub_service, "DataHubContext", StubDataHubContext)
     monkeypatch.setattr(datahub_service, "save_document", fake_save_document)
     monkeypatch.setattr(service, "_client", lambda: client)
+    monkeypatch.setenv("SAVE_DOCUMENT_RESTRICT_UPDATES", "true")
 
     urn, title = service.save_incident_memory(
         run_id="CL-VERIFY",
+        document_urn=SAVED_DOCUMENT_URN,
+        reviewed_at=datetime(2026, 7, 15, 9, 30, tzinfo=UTC),
         source_asset_urn=SOURCE_URN,
         related_asset_urns=[DOWNSTREAM_URN, DOWNSTREAM_URN],
         related_document_urns=[PRIOR_DOCUMENT_URN, PRIOR_DOCUMENT_URN],
@@ -205,6 +241,9 @@ def test_save_incident_memory_requeries_and_verifies_persisted_document(monkeypa
     assert urn == SAVED_DOCUMENT_URN
     assert title == "ContextLoop CL-VERIFY: Grounded test impact"
     assert captured["document_type"] == "Analysis"
+    assert captured["urn"] == SAVED_DOCUMENT_URN
+    assert captured["restriction_during_save"] == "false"
+    assert os.environ["SAVE_DOCUMENT_RESTRICT_UPDATES"] == "true"
     assert captured["related_assets"] == [SOURCE_URN, DOWNSTREAM_URN]
     assert captured["related_documents"] == [PRIOR_DOCUMENT_URN]
     assert client.entities.get_calls == [SAVED_DOCUMENT_URN]
@@ -286,7 +325,7 @@ def test_persisted_document_must_match_every_writeback_field(
     documents: list[str],
 ) -> None:
     document = Document.create_document(
-        id="verified",
+        id=SAVED_DOCUMENT_ID,
         title=title,
         text=text,
         status=status,

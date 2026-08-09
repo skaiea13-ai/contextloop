@@ -12,6 +12,10 @@ SummaryText = Annotated[str, Field(min_length=1, max_length=400)]
 ExplanationText = Annotated[str, Field(min_length=1, max_length=800)]
 ActionText = Annotated[str, Field(min_length=1, max_length=240)]
 EvidenceText = Annotated[str, Field(min_length=1, max_length=280)]
+WriteBackToken = Annotated[
+    str,
+    Field(min_length=64, max_length=64, pattern=r"^[0-9a-f]{64}$"),
+]
 
 
 class AnalyzeRequest(BaseModel):
@@ -75,6 +79,7 @@ class AgentTiming(BaseModel):
 
 class AnalysisResponse(BaseModel):
     run_id: str
+    write_back_token: WriteBackToken
     created_at: datetime
     source_asset: GraphNode
     nodes: list[GraphNode]
@@ -89,10 +94,14 @@ class WriteBackRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     run_id: str
+    write_back_token: WriteBackToken
     approved: Literal[True]
 
 
 class PendingWriteBack(BaseModel):
+    run_id: str
+    document_urn: str
+    reviewed_at: datetime | None = None
     source_asset_urn: str
     related_asset_urns: list[str]
     related_document_urns: list[str]

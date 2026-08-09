@@ -16,6 +16,7 @@ const bootstrapResponse: BootstrapResponse = {
 
 const analysisResponse: AnalysisResponse = {
   run_id: "CL-TEST",
+  write_back_token: "a".repeat(64),
   created_at: "2026-07-15T09:30:00Z",
   source_asset: {
     id: "source",
@@ -169,6 +170,7 @@ describe("ContextLoop impact flow", () => {
       .toBe(localSessionToken);
     expect(JSON.parse(String(fetchMock.mock.calls[2]?.[1]?.body))).toEqual({
       run_id: analysisResponse.run_id,
+      write_back_token: analysisResponse.write_back_token,
       approved: true,
     });
     expect(window.location.hash).toBe("");

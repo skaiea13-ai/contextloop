@@ -27,7 +27,7 @@
       "DataHub schema confirms discount_amount on b2fd91.ORDER_ENTRY_DB.analytics.order_details in PROD.",
       "DataHub column lineage returns 10 downstream assets for discount_amount.",
       "Downstream platforms: 2 Looker, 6 Power BI, 2 Snowflake.",
-      "Source governance signals: tag: PII_Data, tag: Authoritative Source, term: PII, term: Certified.",
+      "DataHub returned 16 source-governance signals for local review.",
       "DataHub returned 3 prior ContextLoop incident memories linked to this source."
     ],
     "actions": [

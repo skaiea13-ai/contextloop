@@ -536,8 +536,10 @@ class CodexAuthRunner:
             evidence.append(f"Downstream platforms: {platform_summary[:250]}.")
         governance_labels = (context.get("governance") or {}).get("signal_labels", [])
         if governance_labels:
-            labels = ", ".join(_single_line(label) for label in governance_labels[:4])
-            evidence.append(f"Source governance signals: {labels[:250]}.")
+            evidence.append(
+                f"DataHub returned {len(governance_labels)} source-governance signals "
+                "for local review."
+            )
         prior_memories = context.get("prior_incident_memories") or []
         if prior_memories:
             evidence.append(

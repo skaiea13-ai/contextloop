@@ -166,6 +166,15 @@ THIRD_PARTY_NOTICES.md      Direct dependency and sample-data notices
   excluded from model context; the model receives only typed non-identifying signals.
 - Owner display names and free-form roles are replaced with response-local aliases before API
   responses and write-backs are constructed.
+- Governance evidence reports only a bounded signal count; raw tag, term, domain, and property
+  labels are not echoed into the assessment or saved incident memory.
+- DataHub search, lineage, ownership, governance, and prior-document collections are capped before
+  they reach the response renderer or model projection.
+- The protected local API admits only one impact analysis at a time, preventing overlapping OAuth
+  model jobs from the same desktop session.
+- Each analysis receives a separate 256-bit write-back capability. Approval atomically claims that
+  capability, DataHub mutations are serialized, and retries upsert the same preassigned DataHub
+  document URN, so concurrent or ambiguous retries cannot create duplicate incident memories.
 - `codex exec` is read-only and ephemeral.
 - Catalog mutation is separated from model reasoning and requires an explicit UI action.
 

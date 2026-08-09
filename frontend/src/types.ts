@@ -68,6 +68,7 @@ export interface AgentTiming {
 
 export interface AnalysisResponse {
   run_id: string;
+  write_back_token: string;
   created_at: string;
   source_asset: GraphNode;
   nodes: GraphNode[];

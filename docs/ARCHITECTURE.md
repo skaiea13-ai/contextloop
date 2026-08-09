@@ -26,7 +26,11 @@ Write phase:
 - `save_document` runs only after an explicit `/api/write-back` request.
 - The saved document is related to the source and every asset selected into the bounded impact set.
 - The saved document links to prior ContextLoop documents, forming a navigable incident-memory chain.
-- The server accepts write-back only for a pending analysis it generated; client-supplied impact data and asset URNs are not trusted.
+- The server accepts write-back only for a pending analysis it generated and a matching 256-bit,
+  response-specific capability; client-supplied impact data and asset URNs are not trusted.
+- Each pending analysis has a preassigned DataHub document URN. Concurrent approval is claimed
+  atomically, DataHub mutations are serialized, and any retry upserts that same target instead of
+  creating another document.
 
 ### Lineage projection boundary
 
@@ -50,10 +54,17 @@ The model process uses the local Codex CLI and ChatGPT OAuth. It is ephemeral, r
 9. Governance signals apply to the source asset and are never promoted to column-level claims without explicit evidence.
 10. New incident memory links to prior related memory as well as affected assets.
 11. Owner display names and free-form roles do not cross the public API or write-back boundary.
+12. Raw governance labels do not cross the assessment or write-back boundary; only a bounded
+    signal count is rendered.
+13. At most one OAuth impact analysis and one DataHub write-back run at a time for the
+    desktop-local service.
+14. A write-back capability can address only its server-grounded analysis and deterministic
+    document target.
 
 ## Failure handling
 
 - DataHub unavailable: analysis returns a safe integration error and no model call is made.
 - OAuth unavailable: analysis returns `503` and tells the operator to run `codex login`.
 - Model timeout or invalid JSON: no assessment or mutation is accepted.
-- Write-back failure: the completed assessment remains visible and can be retried; no success state is shown.
+- Write-back failure: the completed assessment remains visible and can be retried against the
+  same preassigned document target; no success state is shown until an exact SDK re-query passes.

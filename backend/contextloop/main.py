@@ -5,7 +5,8 @@ import os
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from secrets import compare_digest
+from secrets import compare_digest, token_hex
+from threading import BoundedSemaphore, Lock
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, Header, HTTPException
@@ -69,8 +70,14 @@ app.add_middleware(
 
 datahub = DataHubService()
 codex = CodexAuthRunner()
+analysis_slot = BoundedSemaphore(value=1)
+write_back_slot = BoundedSemaphore(value=1)
 pending_write_backs: dict[str, PendingWriteBack] = {}
+in_flight_write_backs: dict[str, PendingWriteBack] = {}
+completed_write_backs: dict[str, tuple[str, WriteBackResponse]] = {}
+write_back_state_lock = Lock()
 MAX_PENDING_WRITE_BACKS = 50
+MAX_COMPLETED_WRITE_BACKS = 50
 
 
 def fixture_enabled() -> bool:
@@ -82,6 +89,66 @@ async def codex_status() -> tuple[bool, str, str]:
         return True, "Deterministic fixture enabled; no model call", "deterministic_fixture"
     ok, detail = await asyncio.to_thread(codex.auth_status)
     return ok, detail, "chatgpt_oauth"
+
+
+def _run_analysis_with_reserved_slot(request: AnalyzeRequest):
+    """Run both blocking integrations while retaining the single analysis slot."""
+    try:
+        context, source, nodes, edges, datahub_timings = datahub.collect_context(
+            asset_urn=request.asset_urn,
+            asset_name=request.asset_name,
+            column=request.column,
+            change_type=request.change_type,
+            environment=request.environment,
+        )
+        reason_started = time.perf_counter()
+        impact, auth_mode = codex.analyze(context)
+        reason_ms = int((time.perf_counter() - reason_started) * 1000)
+        return context, source, nodes, edges, datahub_timings, impact, auth_mode, reason_ms
+    finally:
+        analysis_slot.release()
+
+
+def _run_write_back_with_claim(
+    write_back_token: str,
+    pending: PendingWriteBack,
+) -> WriteBackResponse:
+    """Finish the claimed mutation even if the requesting client disconnects."""
+    try:
+        try:
+            document_urn, title = datahub.save_incident_memory(
+                run_id=pending.run_id,
+                document_urn=pending.document_urn,
+                reviewed_at=pending.reviewed_at,
+                source_asset_urn=pending.source_asset_urn,
+                related_asset_urns=pending.related_asset_urns,
+                related_document_urns=pending.related_document_urns,
+                column=pending.column,
+                change_type=pending.change_type,
+                impact=pending.impact,
+            )
+        except Exception:  # noqa: BLE001 - restore the exact claim before translation
+            with write_back_state_lock:
+                in_flight_write_backs.pop(write_back_token, None)
+                pending_write_backs[write_back_token] = pending
+                while len(pending_write_backs) > MAX_PENDING_WRITE_BACKS:
+                    pending_write_backs.pop(next(iter(pending_write_backs)))
+            raise
+
+        response = WriteBackResponse(
+            document_urn=document_urn,
+            title=title,
+            datahub_url="http://localhost:9002/document/" + document_urn,
+            saved_at=datetime.now(UTC),
+        )
+        with write_back_state_lock:
+            in_flight_write_backs.pop(write_back_token, None)
+            completed_write_backs[write_back_token] = (pending.run_id, response)
+            while len(completed_write_backs) > MAX_COMPLETED_WRITE_BACKS:
+                completed_write_backs.pop(next(iter(completed_write_backs)))
+        return response
+    finally:
+        write_back_slot.release()
 
 
 @app.get("/api/health", dependencies=LOCAL_SESSION_DEPENDENCIES)
@@ -127,18 +194,25 @@ async def bootstrap() -> BootstrapResponse:
     dependencies=LOCAL_SESSION_DEPENDENCIES,
 )
 async def analyze(request: AnalyzeRequest) -> AnalysisResponse:
-    try:
-        context, source, nodes, edges, datahub_timings = await asyncio.to_thread(
-            datahub.collect_context,
-            asset_urn=request.asset_urn,
-            asset_name=request.asset_name,
-            column=request.column,
-            change_type=request.change_type,
-            environment=request.environment,
+    if not analysis_slot.acquire(blocking=False):
+        raise HTTPException(
+            status_code=429,
+            detail="Another impact analysis is already running for this local session.",
         )
-        reason_started = time.perf_counter()
-        impact, auth_mode = await asyncio.to_thread(codex.analyze, context)
-        reason_ms = int((time.perf_counter() - reason_started) * 1000)
+    try:
+        (
+            context,
+            source,
+            nodes,
+            edges,
+            datahub_timings,
+            impact,
+            auth_mode,
+            reason_ms,
+        ) = await asyncio.to_thread(
+            _run_analysis_with_reserved_slot,
+            request,
+        )
     except CodexAuthError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except ValueError as error:
@@ -149,8 +223,12 @@ async def analyze(request: AnalyzeRequest) -> AnalysisResponse:
             detail=f"Impact analysis failed: {type(error).__name__}",
         ) from error
 
-    run_id = f"CL-{uuid4().hex[:4].upper()}"
-    pending_write_backs[run_id] = PendingWriteBack(
+    analysis_id = uuid4().hex
+    run_id = f"CL-{analysis_id[:4].upper()}"
+    write_back_token = token_hex(32)
+    pending = PendingWriteBack(
+        run_id=run_id,
+        document_urn=f"urn:li:document:shared-contextloop-{analysis_id}",
         source_asset_urn=source.urn,
         related_asset_urns=[node.urn for node in nodes[1:]],
         related_document_urns=[
@@ -160,8 +238,16 @@ async def analyze(request: AnalyzeRequest) -> AnalysisResponse:
         change_type=request.change_type,
         impact=impact,
     )
-    while len(pending_write_backs) > MAX_PENDING_WRITE_BACKS:
-        pending_write_backs.pop(next(iter(pending_write_backs)))
+    with write_back_state_lock:
+        while (
+            write_back_token in pending_write_backs
+            or write_back_token in in_flight_write_backs
+            or write_back_token in completed_write_backs
+        ):
+            write_back_token = token_hex(32)
+        pending_write_backs[write_back_token] = pending
+        while len(pending_write_backs) > MAX_PENDING_WRITE_BACKS:
+            pending_write_backs.pop(next(iter(pending_write_backs)))
     timings = [
         AgentTiming(
             stage="read",
@@ -207,6 +293,7 @@ async def analyze(request: AnalyzeRequest) -> AnalysisResponse:
     ]
     return AnalysisResponse(
         run_id=run_id,
+        write_back_token=write_back_token,
         created_at=datetime.now(UTC),
         source_asset=source,
         nodes=nodes,
@@ -224,25 +311,62 @@ async def analyze(request: AnalyzeRequest) -> AnalysisResponse:
     dependencies=LOCAL_SESSION_DEPENDENCIES,
 )
 async def write_back(request: WriteBackRequest) -> WriteBackResponse:
-    pending = pending_write_backs.get(request.run_id)
-    if pending is None:
-        raise HTTPException(
-            status_code=404,
-            detail="No pending grounded analysis exists for this run. Run the impact loop again.",
+    with write_back_state_lock:
+        completed = completed_write_backs.get(request.write_back_token)
+        if completed is not None:
+            completed_run_id, response = completed
+            if completed_run_id != request.run_id:
+                raise HTTPException(
+                    status_code=404,
+                    detail=(
+                        "No pending grounded analysis exists for this run. "
+                        "Run the impact loop again."
+                    ),
+                )
+            return response
+
+        in_flight = in_flight_write_backs.get(request.write_back_token)
+        if in_flight is not None:
+            if in_flight.run_id != request.run_id:
+                raise HTTPException(
+                    status_code=404,
+                    detail=(
+                        "No pending grounded analysis exists for this run. "
+                        "Run the impact loop again."
+                    ),
+                )
+            raise HTTPException(
+                status_code=409,
+                detail="This approved DataHub write-back is already in progress.",
+            )
+
+        pending = pending_write_backs.get(request.write_back_token)
+        if pending is None or pending.run_id != request.run_id:
+            raise HTTPException(
+                status_code=404,
+                detail=(
+                    "No pending grounded analysis exists for this run. "
+                    "Run the impact loop again."
+                ),
+            )
+        pending = pending.model_copy(
+            update={"reviewed_at": pending.reviewed_at or datetime.now(UTC)}
         )
+        if not write_back_slot.acquire(blocking=False):
+            raise HTTPException(
+                status_code=429,
+                detail="Another DataHub write-back is already running for this local session.",
+            )
+        pending_write_backs.pop(request.write_back_token)
+        in_flight_write_backs[request.write_back_token] = pending
+
     try:
-        document_urn, title = await asyncio.to_thread(
-            datahub.save_incident_memory,
-            run_id=request.run_id,
-            source_asset_urn=pending.source_asset_urn,
-            related_asset_urns=pending.related_asset_urns,
-            related_document_urns=pending.related_document_urns,
-            column=pending.column,
-            change_type=pending.change_type,
-            impact=pending.impact,
+        return await asyncio.to_thread(
+            _run_write_back_with_claim,
+            request.write_back_token,
+            pending,
         )
     except Exception as error:  # noqa: BLE001
-        pending_write_backs[request.run_id] = pending
         raise HTTPException(
             status_code=502,
             detail=(
@@ -250,13 +374,6 @@ async def write_back(request: WriteBackRequest) -> WriteBackResponse:
                 "The pending analysis was preserved."
             ),
         ) from error
-    pending_write_backs.pop(request.run_id, None)
-    return WriteBackResponse(
-        document_urn=document_urn,
-        title=title,
-        datahub_url="http://localhost:9002/document/" + document_urn,
-        saved_at=datetime.now(UTC),
-    )
 
 
 frontend_dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"

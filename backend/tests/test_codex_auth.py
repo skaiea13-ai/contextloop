@@ -149,6 +149,24 @@ def test_fixture_analysis_is_deterministic_and_grounded(
     assert "request_supplied_column" not in impact.model_dump_json()
 
 
+def test_governance_evidence_does_not_echo_catalog_labels(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("CONTEXTLOOP_FAKE_CODEX", "1")
+    context = _context()
+    context["governance"]["signal_labels"] = [
+        "tag: PRIVATE_PERSON_NAME",
+        "domain: person@example.com",
+    ]
+
+    impact, _ = CodexAuthRunner().analyze(context)
+
+    serialized = impact.model_dump_json()
+    assert "PRIVATE_PERSON_NAME" not in serialized
+    assert "person@example.com" not in serialized
+    assert "2 source-governance signals" in serialized
+
+
 def test_empty_owner_names_are_explicitly_unassigned(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

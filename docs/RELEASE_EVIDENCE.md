@@ -1,19 +1,19 @@
 # Release verification evidence
 
-Latest verification date: August 8, 2026<br>
+Latest verification date: August 10, 2026<br>
 Intended platform: desktop browser on macOS or Linux with a Docker-compatible runtime
 
 ## Automated checks
 
 - Python 3.11 dependency resolution completed from `uv.lock` using copy mode for external-drive compatibility.
 - Ruff completed with no findings.
-- Pytest completed with 25 passing tests, covering the OAuth environment boundary, deterministic grounding, DataHub context projection, and exact server-side write-back verification.
+- Pytest completed with 37 passing tests, covering the OAuth environment boundary, deterministic grounding, bounded DataHub context projection, single-job admission, short display-ID collision isolation, per-analysis write-back capabilities, serialized DataHub mutation, concurrent approval, client disconnect recovery, idempotent retry, and exact server-side write-back verification.
 - Vitest completed with three passing interface flows: analyze then approve, write-back failure then retry, and the visible deterministic-fixture label. The suite also passed three additional repeat runs.
 - TypeScript compilation and the Vite production build completed successfully.
 - Shell scripts pass Bash syntax validation, and `scripts/dev.sh` passes ShellCheck. The launcher waited for `/api/health`, started Vite on the strict 5173 port, returned a healthy ChatGPT OAuth/DataHub response, and cleaned up both processes on interruption. Its occupied-8000 path also failed immediately instead of starting the frontend against an unintended backend.
 - `examples/impact-analysis.json` passes strict JSON parsing.
 - `./scripts/verify.sh` re-confirmed the full static, test, production-build, ChatGPT OAuth, and DataHub gate on July 16 after the public repository URLs were added.
-- `./scripts/verify.sh` re-confirmed Ruff, all 25 Pytest tests, all three Vitest flows, the TypeScript build, ChatGPT OAuth, and DataHub health on August 8.
+- `./scripts/verify.sh` re-confirmed Ruff, all 37 Pytest tests, all three Vitest flows, the TypeScript build, ChatGPT OAuth, and DataHub health on August 10.
 - On July 12, a fresh local clone completed judge-mode bootstrap, locked dependency installation, the full verification suite, and a clean working-tree check while each script was invoked from outside the clone. That clean-clone exercise was not repeated on July 15.
 
 DataHub emits its documented experimental-SDK warning for `datahub.sdk` and Agent Context Kit `save_document`; it does not fail any check.
@@ -29,9 +29,11 @@ DataHub emits its documented experimental-SDK warning for `datahub.sdk` and Agen
 - Timings: 226 ms context read, 725 ms lineage and memory projection, 11,922 ms OAuth reasoning.
 - Human gate: the Analysis document did not exist until the separate approval action.
 - Write-back: `urn:li:document:shared-b90b866f-cf9c-404c-ad33-03f88d9c2248` was re-read through the DataHub SDK as a published `Analysis` with the exact title/content markers, eleven related assets, and three related prior documents.
-- Exact sanitized output is preserved in `examples/impact-analysis.json` and `examples/incident-memory.md`.
+- Sanitized representative output based on the verified run is preserved in `examples/impact-analysis.json` and `examples/incident-memory.md`; raw governance labels are replaced by the same bounded count now emitted by the hardened renderer.
 - `./scripts/verify_live.sh` independently completed the same release gate on run `CL-D74B`: zero matching document before approval, then published status, dynamic content, and exact relationship re-query verification after approval.
 - On August 8, `./scripts/verify_live.sh` independently passed again on run `CL-682A`: ChatGPT OAuth, ten affected assets, five grounded actions, approval-gated write-back, verified DataHub URL, and successful SDK re-read.
+- On August 10, the hardened `./scripts/verify_live.sh` passed on run `CL-B1E4`: the protected response issued a 256-bit write-back capability, the approval upserted the preassigned `urn:li:document:shared-contextloop-b1e440d523c5492896d3d42dfe551481`, and the SDK re-read the exact published document with ten affected assets and five grounded actions. Regression tests also proved that concurrent approval performs one save and a retry returns the same result and document target.
+- After client-disconnect recovery and global DataHub mutation serialization were added, the exact final tree passed the live gate again on run `CL-D5E1`; `urn:li:document:shared-contextloop-d5e130f41407463ba4427dcbd7d52c5f` was re-read as the approved published document with ten affected assets and five grounded actions.
 
 ## Free judge path
 

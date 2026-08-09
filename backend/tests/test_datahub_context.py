@@ -2,8 +2,11 @@ import json
 
 from backend.contextloop import datahub_service
 from backend.contextloop.datahub_service import (
+    MAX_GOVERNANCE_NAMES,
+    MAX_OWNERS_PER_ENTITY,
     DataHubService,
     _governance_context,
+    _owners,
     _search_query,
 )
 
@@ -79,6 +82,39 @@ def test_governance_context_projects_only_safe_signals() -> None:
     assert context["structured_properties"] == {"Data Quality Score": 91.5}
     assert "[redacted-email]" in context["description"]
     assert "@" not in json.dumps(context)
+
+
+def test_catalog_collections_are_bounded_before_projection() -> None:
+    entity = {
+        "ownership": {
+            "owners": [
+                {
+                    "owner": {"properties": {"displayName": f"Owner {index:03d}"}},
+                    "ownershipType": {"info": {"name": "Owner"}},
+                }
+                for index in range(200)
+            ]
+        },
+        "tags": {
+            "tags": [
+                {"tag": {"properties": {"name": f"Tag {index:03d}"}}}
+                for index in range(200)
+            ]
+        },
+        "glossaryTerms": {
+            "terms": [
+                {"term": {"properties": {"name": f"Term {index:03d}"}}}
+                for index in range(200)
+            ]
+        },
+    }
+
+    governance = _governance_context(entity)
+
+    assert len(_owners(entity)) == MAX_OWNERS_PER_ENTITY
+    assert len(governance["tags"]) == MAX_GOVERNANCE_NAMES
+    assert len(governance["glossary_terms"]) == MAX_GOVERNANCE_NAMES
+    assert len(governance["signal_labels"]) == MAX_GOVERNANCE_NAMES
 
 
 def test_collect_context_uses_canonical_dataset_name_and_environment(monkeypatch) -> None:

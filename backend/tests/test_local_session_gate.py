@@ -7,6 +7,7 @@ from backend.contextloop import main
 
 LOCAL_SESSION_TOKEN = "test-contextloop-session-token-with-32-bytes"
 LOCAL_SESSION_HEADER = {"X-ContextLoop-Token": LOCAL_SESSION_TOKEN}
+WRITE_BACK_TOKEN = "f" * 64
 
 
 @pytest.mark.asyncio
@@ -18,7 +19,11 @@ async def test_privileged_api_rejects_missing_local_session_token(monkeypatch) -
     ) as client:
         response = await client.post(
             "/api/write-back",
-            json={"run_id": "CL-MISSING", "approved": True},
+            json={
+                "run_id": "CL-MISSING",
+                "write_back_token": WRITE_BACK_TOKEN,
+                "approved": True,
+            },
         )
 
     assert response.status_code == 401
@@ -35,7 +40,11 @@ async def test_privileged_api_accepts_matching_local_session_token(monkeypatch) 
         response = await client.post(
             "/api/write-back",
             headers=LOCAL_SESSION_HEADER,
-            json={"run_id": "CL-MISSING", "approved": True},
+            json={
+                "run_id": "CL-MISSING",
+                "write_back_token": WRITE_BACK_TOKEN,
+                "approved": True,
+            },
         )
 
     assert response.status_code == 404
@@ -51,7 +60,11 @@ async def test_api_rejects_unexpected_host_before_route_execution(monkeypatch) -
         response = await client.post(
             "/api/write-back",
             headers=LOCAL_SESSION_HEADER,
-            json={"run_id": "CL-MISSING", "approved": True},
+            json={
+                "run_id": "CL-MISSING",
+                "write_back_token": WRITE_BACK_TOKEN,
+                "approved": True,
+            },
         )
 
     assert response.status_code == 400
@@ -67,7 +80,11 @@ async def test_privileged_api_fails_closed_when_server_token_is_missing(monkeypa
     ) as client:
         response = await client.post(
             "/api/write-back",
-            json={"run_id": "CL-MISSING", "approved": True},
+            json={
+                "run_id": "CL-MISSING",
+                "write_back_token": WRITE_BACK_TOKEN,
+                "approved": True,
+            },
         )
 
     assert response.status_code == 503
