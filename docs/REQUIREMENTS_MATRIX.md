@@ -11,7 +11,7 @@ Sources: [hackathon overview](https://datahub.devpost.com/) and [official rules]
 | Public code repository containing all source, assets, and full instructions | Public repository includes README, design asset, docs, examples, lockfiles, and the verified clone command | Complete and anonymously cloneable |
 | Apache 2.0 license detectable in the repository About area | Root `LICENSE`, GitHub repository metadata, and anonymous API response identify Apache-2.0 | Complete |
 | English project description | `docs/DEVPOST_DESCRIPTION.md` | Complete |
-| Public demonstration video under three minutes | Published 165-second calm-Aiden replacement from a real OAuth run: `https://youtu.be/rbLMs7jN6eY` | Complete and publicly reachable |
+| Public demonstration video under three minutes | Published 165-second calm-Aiden replacement from a real OAuth run: `https://youtu.be/UIl6YiQPIWc` | Complete and publicly reachable |
 | Video shows the Project functioning on its intended device | Published final cut covers live DataHub read, lineage, OAuth reasoning, approval, write-back, and document view | Complete |
 | Video contains no unlicensed copyrighted music or third-party material | Decode, frame, audio, subtitle, and privacy review found no copyrighted music or unrelated third-party material | Complete |
 | Sample outputs are recommended | Verified OAuth output and exact saved DataHub document under `examples/`, including asset and prior-document relations | Complete |

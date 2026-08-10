@@ -28,7 +28,7 @@ Agents That Do Real Work
 
 ## Public demo video URL
 
-`https://youtu.be/rbLMs7jN6eY`
+`https://youtu.be/UIl6YiQPIWc`
 
 ## Built with
 

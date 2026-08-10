@@ -26,7 +26,7 @@ Source of truth: [Build with DataHub: The Agent Hackathon](https://datahub.devpo
 - [x] Apache 2.0 `LICENSE` at repository root.
 - [x] Repository About metadata and the anonymous GitHub API identify the license as Apache-2.0.
 - [x] English project description and testing instructions.
-- [x] Public YouTube demo video under three minutes: `https://youtu.be/rbLMs7jN6eY`.
+- [x] Public YouTube demo video under three minutes: `https://youtu.be/UIl6YiQPIWc`.
 - [x] Published 165-second replacement shows the actual real-OAuth project functioning on its intended desktop browser, uses calm Aiden synthetic narration with disclosure, and includes manually uploaded English captions.
 - [x] Sample outputs present under `examples/`.
 - [x] No secret, personal token, local credential, private dataset, or machine-local path in the repository or working diff.
